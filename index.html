@@ -172,9 +172,14 @@
     .setup-info { display: flex; gap: 10px; align-items: center; font-size: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 9px; background: #191b2055; margin: 20px 0; }
     .setup-info strong { color: var(--cream); }
     .setup-info span { color: var(--muted); line-height: 1.6; }
-    details { margin: 17px 0 23px; font-size: 12px; color: var(--muted); }
-    summary { cursor: pointer; padding: 6px 0; }
-    details textarea { resize: vertical; min-height: 100px; margin-top: 10px; line-height: 1.7; }
+    .word-bank-list { display: grid; gap: 9px; margin: 22px 0; }
+    .word-bank-option { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px; text-align: left; }
+    .word-bank-option.selected { border-color: var(--cream); background: #efe8db0d; }
+    .word-bank-name { display: block; overflow-wrap: anywhere; }
+    .word-bank-count { display: block; color: var(--muted); font-size: 11px; font-weight: 400; margin-top: 7px; }
+    .word-bank-choice { color: var(--muted); flex-shrink: 0; font-size: 11px; }
+    .word-bank-field { margin: 20px 0; }
+    .word-bank-field textarea { resize: vertical; min-height: 150px; line-height: 1.7; }
     .rules { padding: 0; margin: 23px 0; list-style: none; display: flex; flex-direction: column; gap: 17px; }
     .rules li { display: flex; gap: 13px; }
     .rules .rule-index { color: var(--team); font-size: 11px; padding-top: 3px; }
@@ -273,6 +278,7 @@
       <nav class="header-actions" aria-label="游戏菜单">
         <span class="offline" id="offline-status" data-offline-status role="status" aria-live="polite">离线就绪</span>
         <button class="button quiet" id="rules-button">玩法</button>
+        <button class="button quiet" id="word-banks-button">词库</button>
         <button class="button quiet" id="fullscreen-button">全屏</button>
         <button class="button" id="new-game-button">新对局 ↗</button>
       </nav>
@@ -432,6 +438,7 @@
     "use strict";
     (() => {
       const STORAGE_KEY = "codenames-family-v1";
+      const WORD_BANKS_STORAGE_KEY = "codenames-word-banks-v1";
       const TEAM_NAMES = { red: "红队", blue: "蓝队" };
       const ROLE_NAMES = { red: "红队特工", blue: "蓝队特工", neutral: "无辜路人", assassin: "刺客" };
       const ICONS = {
@@ -451,7 +458,10 @@
       let modalKind = null;
       let modalReturnFocus = null;
       let setupFirstTeam = "random";
-      let customWordsDraft = "";
+      let wordBanks = loadWordBanks();
+      let selectedWordBankName = "";
+      let wordBankReturnToSetup = false;
+      let wordBankDraft = { name: "", words: "" };
       let toastTimer;
       let saveAvailable = true;
       const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
@@ -469,6 +479,19 @@
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(game)); saveAvailable = true; }
         catch (error) { saveAvailable = false; console.info("浏览器未提供本地保存，当前对局可正常游玩。", error.name); }
         document.getElementById("save-status").textContent = saveAvailable ? "对局已保存在这台设备" : "当前浏览器不支持保存 · 请保持页面打开";
+      }
+      function loadWordBanks() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(WORD_BANKS_STORAGE_KEY));
+          return Array.isArray(stored) ? stored : [];
+        } catch (error) { console.info("未能读取本地词库，将使用默认词库。", error.name); }
+        return [];
+      }
+      function parseWordBankWords(text) {
+        return [...new Set(text.split(/[\s,，;；、]+/u).filter(Boolean))];
+      }
+      function selectedWordBank() {
+        return wordBanks.find(bank => bank.name === selectedWordBankName);
       }
       function showToast(message) {
         clearTimeout(toastTimer);
@@ -573,38 +596,95 @@
       const closeButton = '<button class="modal-close" data-action="close" aria-label="关闭弹窗">×</button>';
       function showSetup() {
         lockKey(false);
+        const bank = selectedWordBank();
         showModal("setup", `${closeButton}<div class="modal-icon">${ICONS.cards}</div><div class="eyebrow">今晚的家庭任务</div><h2 id="modal-title">把默契，摆上桌。</h2>
           <p class="modal-copy">红蓝两队，各选一位队长。其余人猜词。<br>一台设备轮流传递，所有人一起参与。</p>
           <div class="setup-section"><label class="field-label">谁先行动？</label><div class="segmented">
             ${[["random", "随机先手"], ["red", "红队先手"], ["blue", "蓝队先手"]].map(([team, label]) => `<button data-first-team="${team}" aria-pressed="${setupFirstTeam === team}" class="${setupFirstTeam === team ? "selected" : ""}">${label}</button>`).join("")}
           </div></div>
           <div class="setup-info"><strong>5 × 5</strong><span>先手 9 名 · 后手 8 名<br>7 名路人 · 1 名刺客</span></div>
-          <details ${customWordsDraft ? "open" : ""}><summary>想用自己的词？（可选）</summary>
-            <textarea class="input" id="custom-words" placeholder="粘贴至少 25 个不同的词，用空格、逗号或换行分隔。留空使用家庭词库。">${escapeHtml(customWordsDraft)}</textarea>
-            <p class="hint">默认有 ${Codenames.WORDS.length} 个日常中文词。自定义词建议每个不超过 8 个字。</p></details>
-          <p class="error" id="setup-error" role="alert" hidden></p>
+          <div class="setup-section"><span class="field-label">本局词库</span>
+            <button class="button word-bank-option" data-action="select-word-bank">
+              <span><span class="word-bank-name">${escapeHtml(bank?.name || "默认词库")}</span><span class="word-bank-count">${bank?.words.length || Codenames.WORDS.length} 个词</span></span>
+              <span class="word-bank-choice">选择词库 ›</span>
+            </button><p class="hint">不指定时使用默认词库，也可以新建自己的词库。</p>
+          </div>
           <button class="button primary full" data-action="start-game" data-autofocus>开始行动 →</button>
           <p class="modal-footnote">${game ? "开始后将替换当前对局。" : "推荐 4 人以上；3 人可共用一位猜词者。"}<br>提示词和数量口述，红蓝轮次由队员切换。</p>`);
       }
       function startGame() {
-        customWordsDraft = document.getElementById("custom-words")?.value || "";
-        const customWords = [...new Set(customWordsDraft.trim().split(/[\s,，;；、]+/u).filter(Boolean))];
-        const error = document.getElementById("setup-error");
-        if (customWordsDraft.trim() && customWords.length < 25) {
-          error.textContent = `目前只有 ${customWords.length} 个不同的词，请补充到至少 25 个。`;
-          error.hidden = false;
-          return;
-        }
-        if (customWords.some(word => [...word].length > 8)) {
-          error.textContent = "自定义词请控制在 8 个字以内，方便在棋盘上显示。";
-          error.hidden = false;
-          return;
-        }
-        game = Codenames.createGame(customWords.length ? customWords : Codenames.WORDS, setupFirstTeam);
+        game = Codenames.createGame(selectedWordBank()?.words || Codenames.WORDS, setupFirstTeam);
         privacyLocked = true;
         saveGame();
         closeModal();
         window.scrollTo({ top: 0, behavior: "instant" });
+      }
+      function showWordBanks(returnToSetup = false) {
+        lockKey(false);
+        wordBankReturnToSetup = returnToSetup;
+        const options = [{ name: "", words: Codenames.WORDS }, ...wordBanks];
+        showModal("word-banks", `<button class="modal-close" data-action="return-from-word-banks" aria-label="${returnToSetup ? "返回新对局" : "关闭词库"}">×</button>
+          <div class="eyebrow">为下一局，挑一份词</div><h2 id="modal-title">选择词库。</h2>
+          <p class="modal-copy">不指定时使用默认词库。新建的词库会保存在这台设备，之后可以反复使用。</p>
+          <div class="word-bank-list" role="group" aria-label="可选词库">
+            ${options.map(bank => `<button class="button word-bank-option ${bank.name === selectedWordBankName ? "selected" : ""}" data-word-bank="${escapeHtml(bank.name)}" aria-pressed="${bank.name === selectedWordBankName}">
+              <span><span class="word-bank-name">${escapeHtml(bank.name || "默认词库")}</span><span class="word-bank-count">${bank.words.length} 个词</span></span>
+              <span class="word-bank-choice">${bank.name === selectedWordBankName ? "已选择 ✓" : "选择 ›"}</span>
+            </button>`).join("")}
+          </div>
+          <button class="button primary full" data-action="new-word-bank">＋ 新建词库</button>
+          <button class="button quiet full" data-action="return-from-word-banks" style="margin-top:8px">${returnToSetup ? "返回新对局" : "继续游戏"}</button>
+          <p class="modal-footnote">选择词库仅影响新对局，当前棋盘会保留。</p>`);
+      }
+      function returnFromWordBanks() {
+        if (wordBankReturnToSetup) showSetup();
+        else {
+          closeModal();
+          if (game?.phase === "key" && privacyLocked) showKeyConfirmation();
+        }
+      }
+      function showWordBankEditor() {
+        showModal("word-bank-editor", `<button class="modal-close" data-action="back-to-word-banks" aria-label="返回词库选择">×</button>
+          <div class="eyebrow">收集家人的共同语言</div><h2 id="modal-title">新建词库。</h2>
+          <div class="word-bank-field"><label class="field-label" for="word-bank-name">词库名称</label>
+            <input class="input" id="word-bank-name" placeholder="例如：动物世界、课本生词" value="${escapeHtml(wordBankDraft.name)}" maxlength="40" autocomplete="off" data-autofocus>
+          </div>
+          <div class="word-bank-field"><label class="field-label" for="word-bank-words">粘贴词语</label>
+            <textarea class="input" id="word-bank-words" placeholder="苹果，香蕉, 橘子&#10;葡萄 西瓜 草莓">${escapeHtml(wordBankDraft.words)}</textarea>
+            <p class="hint">支持中文逗号、英文逗号、空格、换行、Tab，也支持顿号和分号；可以混用。重复词会自动去除，每个词最多 8 个字。</p>
+            <p class="hint" id="word-bank-word-count" role="status" aria-live="polite">已识别 ${parseWordBankWords(wordBankDraft.words).length} 个不同的词 · 至少需要 25 个</p>
+          </div>
+          <p class="error" id="word-bank-error" role="alert" hidden></p>
+          <button class="button primary full" data-action="save-word-bank">保存并选择词库 →</button>
+          <button class="button quiet full" data-action="back-to-word-banks" style="margin-top:8px">返回词库选择</button>`);
+      }
+      function saveWordBank() {
+        const name = wordBankDraft.name.trim();
+        const words = parseWordBankWords(wordBankDraft.words);
+        const error = document.getElementById("word-bank-error");
+        let message = "";
+        if (!name) message = "请给词库取一个名字。";
+        else if (name === "默认词库" || wordBanks.some(bank => bank.name === name)) message = "这个词库名称已存在，请换个名字。";
+        else if (words.length < 25) message = `目前只有 ${words.length} 个不同的词，请补充到至少 25 个。`;
+        else if (words.some(word => [...word].length > 8)) message = "每个词请控制在 8 个字以内，方便在棋盘上显示。";
+        if (message) {
+          error.textContent = message;
+          error.hidden = false;
+          return;
+        }
+        const updatedBanks = [...wordBanks, { name, words }];
+        try { localStorage.setItem(WORD_BANKS_STORAGE_KEY, JSON.stringify(updatedBanks)); }
+        catch (storageError) {
+          console.info("浏览器未能保存词库。", storageError.name);
+          error.textContent = "浏览器未能保存词库，请检查是否限制了网站存储，然后重试。";
+          error.hidden = false;
+          return;
+        }
+        wordBanks = updatedBanks;
+        selectedWordBankName = name;
+        wordBankDraft = { name: "", words: "" };
+        returnFromWordBanks();
+        showToast(`已保存并选择“${name}”，新对局会使用这个词库。`);
       }
       function showKeyConfirmation() {
         const name = TEAM_NAMES[game.currentTeam];
@@ -678,9 +758,19 @@
           });
           return;
         }
+        if (button.hasAttribute("data-word-bank")) {
+          selectedWordBankName = button.dataset.wordBank;
+          returnFromWordBanks();
+          return;
+        }
         switch (button.dataset.action) {
           case "setup": showSetup(); break;
           case "start-game": startGame(); break;
+          case "select-word-bank": showWordBanks(true); break;
+          case "new-word-bank": showWordBankEditor(); break;
+          case "save-word-bank": saveWordBank(); break;
+          case "return-from-word-banks": returnFromWordBanks(); break;
+          case "back-to-word-banks": showWordBanks(wordBankReturnToSetup); break;
           case "close":
             closeModal();
             if (game?.phase === "key" && privacyLocked) showKeyConfirmation();
@@ -704,10 +794,16 @@
         }
       });
       document.addEventListener("input", event => {
-        if (event.target.id === "custom-words") customWordsDraft = event.target.value;
+        if (event.target.id === "word-bank-name") wordBankDraft.name = event.target.value;
+        if (event.target.id === "word-bank-words") {
+          wordBankDraft.words = event.target.value;
+          document.getElementById("word-bank-word-count").textContent = `已识别 ${parseWordBankWords(wordBankDraft.words).length} 个不同的词 · 至少需要 25 个`;
+        }
+        if (["word-bank-name", "word-bank-words"].includes(event.target.id)) document.getElementById("word-bank-error").hidden = true;
       });
       document.getElementById("new-game-button").addEventListener("click", showSetup);
       document.getElementById("rules-button").addEventListener("click", showRules);
+      document.getElementById("word-banks-button").addEventListener("click", () => showWordBanks());
       window.addEventListener("pwa-lock-key", () => lockKey(false));
       window.addEventListener("pwa-message", event => showToast(event.detail));
       window.addEventListener("pwa-install-help", () => {
@@ -735,6 +831,12 @@
       window.addEventListener("blur", () => lockKey());
       document.addEventListener("keydown", event => {
         if (!modalKind) return;
+        if (event.key === "Escape" && modalKind === "word-bank-editor") {
+          event.preventDefault(); showWordBanks(wordBankReturnToSetup); return;
+        }
+        if (event.key === "Escape" && modalKind === "word-banks") {
+          event.preventDefault(); returnFromWordBanks(); return;
+        }
         if (event.key === "Escape" && ["setup", "rules", "selection", "result", "install"].includes(modalKind)) {
           event.preventDefault(); closeModal();
           if (game?.phase === "key" && privacyLocked) showKeyConfirmation();
