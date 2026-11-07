@@ -4,6 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#191b20">
+  <meta name="description" content="一家人、一台设备，口述提示、手动换队的行动代号游戏。支持安装到桌面和离线游玩。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="行动代号">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>行动代号 · 家庭桌</title>
   <style>
     :root {
@@ -60,6 +67,9 @@
     .button.quiet:hover { color: var(--text); }
     .offline { color: var(--muted); font-size: 11px; white-space: nowrap; display: flex; gap: 7px; align-items: center; margin-right: 9px; }
     .offline::before { content: ""; width: 6px; height: 6px; background: #a4bda0; border-radius: 50%; }
+    .pwa-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .pwa-actions .button { font-size: 11px; padding: 7px 9px; }
+    .offline-status-mobile { display: none; }
     .scoreboard { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center; margin-bottom: 30px; }
     .score { border: 1px solid var(--line); border-radius: 14px; background: #ffffff03; min-height: 88px; display: flex; gap: 20px; align-items: center; padding: 15px 22px; transition: border-color .2s; }
     .score.red { --score-color: var(--red); }
@@ -119,23 +129,9 @@
     .live-dot { height: 6px; width: 6px; background: var(--team); border-radius: 50%; display: inline-block; margin-right: 6px; }
     .panel-title { font-size: 21px; margin: 0 0 9px; font-weight: 650; }
     .panel-copy { color: var(--muted); font-size: 12px; line-height: 1.8; margin: 0 0 20px; }
-    .clue-display { background: #191b20; border: 1px solid var(--line); border-radius: 9px; padding: 18px; margin: 17px 0; }
-    .clue-word { font-size: 25px; font-weight: 700; overflow-wrap: anywhere; }
-    .clue-number { display: inline-block; margin-left: 10px; color: var(--team); font-size: 17px; font-weight: 650; }
-    .clue-description { font-size: 10px; color: var(--muted); margin-top: 9px; line-height: 1.5; }
-    .guess-meter { display: flex; justify-content: space-between; align-items: center; margin: 22px 0; }
-    .guess-meter-label { font-size: 12px; color: var(--muted); line-height: 1.8; }
-    .guess-meter-count { color: var(--team); font-size: 36px; font-weight: 700; line-height: 1; }
-    .guess-pips { display: flex; gap: 5px; margin-top: 8px; }
-    .guess-pips i { width: 17px; height: 4px; background: var(--team); border-radius: 2px; }
-    .guess-pips i.spent { background: #434650; }
     .field-label { font-size: 12px; display: block; color: #cdcbd0; margin-bottom: 9px; }
     .input { width: 100%; color: var(--text); background: #191b20; border: 1px solid #4c4e58; padding: 13px 12px; border-radius: 8px; font-size: 14px; }
     .input::placeholder { color: #8f8e99; }
-    .clue-field { margin-bottom: 16px; }
-    .clue-count-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
-    .clue-count-row .input { width: 96px; }
-    .clue-count-row .field-label { margin: 0; }
     .hint { font-size: 11px; color: var(--muted); line-height: 1.75; margin: 12px 0 0; }
     .error { color: #ffa99e; margin: 0 0 13px; line-height: 1.6; font-size: 12px; }
     .history { border-top: 1px solid var(--line); padding: 20px 22px 10px; }
@@ -145,8 +141,8 @@
     .history-turn { border-left: 2px solid var(--line); padding-left: 12px; margin-bottom: 16px; }
     .history-turn.red { border-color: var(--red); }
     .history-turn.blue { border-color: var(--blue); }
-    .history-clue { font-size: 12px; font-weight: 650; margin-bottom: 7px; }
-    .history-clue small { color: var(--muted); font-weight: 400; font-size: 10px; margin-right: 7px; }
+    .history-heading { font-size: 12px; font-weight: 650; margin-bottom: 7px; }
+    .history-heading small { color: var(--muted); font-weight: 400; font-size: 10px; margin-left: 7px; }
     .history-guesses { display: flex; flex-wrap: wrap; gap: 5px; }
     .history-guess { border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; font-size: 10px; color: var(--muted); }
     .history-guess.red { color: var(--red); }
@@ -214,6 +210,7 @@
       .board-heading h2 { font-size: 22px; }
       .header { margin-bottom: 26px; }
       .offline { display: none; }
+      .offline-status-mobile { display: inline; }
       .scoreboard { gap: 14px; margin-bottom: 24px; }
       .score { gap: 12px; padding: 14px; }
     }
@@ -257,7 +254,6 @@
       .panel-kicker { padding-bottom: 15px; }
       .panel-title { font-size: 20px; }
       .panel-copy { margin-bottom: 14px; }
-      .guess-meter { margin: 17px 0; }
       .footer { font-size: 8px; letter-spacing: 0; gap: 10px; margin-top: 21px; }
       .modal-backdrop { padding: 15px; }
       .modal { padding: 25px; max-height: calc(100dvh - 30px); border-radius: 15px; }
@@ -275,7 +271,7 @@
         <div><h1>行动代号</h1><div class="brand-subtitle">CODENAMES / 家庭桌</div></div>
       </div>
       <nav class="header-actions" aria-label="游戏菜单">
-        <span class="offline">离线就绪</span>
+        <span class="offline" id="offline-status" data-offline-status role="status" aria-live="polite">离线就绪</span>
         <button class="button quiet" id="rules-button">玩法</button>
         <button class="button quiet" id="fullscreen-button">全屏</button>
         <button class="button" id="new-game-button">新对局 ↗</button>
@@ -295,7 +291,7 @@
         <div class="mobile-briefing" id="mobile-briefing" hidden></div>
         <div class="board" id="board" aria-label="五行五列的代号卡"></div>
         <div class="family-rule">
-          <span><span class="rule-symbol">↻</span><strong>家庭规则</strong> · 猜到路人或对方特工，有机会就能继续猜</span>
+          <span><span class="rule-symbol">↻</span><strong>家庭规则</strong> · 猜错仍可继续，红蓝轮次由队员手动切换</span>
           <div class="legend" aria-label="身份图例">
             <span><i style="background:var(--red)"></i>红队</span><span><i style="background:var(--blue)"></i>蓝队</span>
             <span><i style="background:var(--neutral)"></i>路人</span><span><i style="background:#81818a"></i>刺客</span>
@@ -305,12 +301,20 @@
       <aside class="panel" aria-label="行动简报与对局记录">
         <div class="briefing" id="briefing"></div>
         <div class="history">
-          <div class="history-title"><span>本局记录</span><span id="history-count">0 条提示</span></div>
+          <div class="history-title"><span>本局记录</span><span id="history-count">0 轮行动</span></div>
           <div class="history-list" id="history-list"></div>
         </div>
       </aside>
     </main>
-    <footer class="footer"><span>一家人，一台设备，一场谍战。</span><span id="save-status">中文词库 · 完全离线</span></footer>
+    <footer class="footer">
+      <span>一家人，一台设备，一场谍战。</span>
+      <div class="pwa-actions">
+        <span class="offline-status-mobile" data-offline-status role="status" aria-live="polite">离线就绪</span>
+        <span id="save-status">中文词库 · 完全离线</span>
+        <button class="button quiet" id="install-button" hidden>安装到桌面</button>
+        <button class="button" id="update-button" hidden>更新应用</button>
+      </div>
+    </footer>
   </div>
   <div class="modal-backdrop" id="modal-backdrop" hidden>
     <section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section>
@@ -371,40 +375,41 @@
           ...Array(7).fill("neutral"), "assassin"
         ], random);
         return {
-          version: 1, startingTeam, currentTeam: startingTeam, phase: "handoff",
+          version: 2, startingTeam, currentTeam: startingTeam, phase: "guess",
           cards: shuffle([...new Set(wordPool)], random).slice(0, 25).map((word, index) => ({ word, role: roles[index], revealed: false })),
-          turnNumber: 1, clue: null, guessesUsed: 0, history: [], winner: null, finishReason: null,
-          lastTurnSummary: null, createdAt: Date.now()
+          turnNumber: 1, history: [{ number: 1, team: startingTeam, guesses: [], ended: false }],
+          winner: null, finishReason: null, createdAt: Date.now()
+        };
+      }
+      function restoreGame(saved) {
+        const phase = saved.phase === "key" ? "key" : saved.phase === "finished" ? "finished" : "guess";
+        const history = saved.history.map(({ number, team, guesses, ended }) => ({ number, team, guesses, ended }));
+        if (phase !== "finished" && history[history.length - 1]?.number !== saved.turnNumber) {
+          history.push({ number: saved.turnNumber, team: saved.currentTeam, guesses: [], ended: false });
+        }
+        return {
+          version: 2, startingTeam: saved.startingTeam, currentTeam: saved.currentTeam, phase,
+          cards: saved.cards, turnNumber: saved.turnNumber, history, winner: saved.winner,
+          finishReason: saved.finishReason, createdAt: saved.createdAt
         };
       }
       function agentCounts(game, team) {
         const cards = game.cards.filter(card => card.role === team);
         return { total: cards.length, found: cards.filter(card => card.revealed).length, remaining: cards.filter(card => !card.revealed).length };
       }
-      function clueLimit(count) { return count === 0 || count === "unlimited" ? Infinity : count + 1; }
-      function setClue(game, word, count) {
-        game.clue = { word, count };
-        game.guessesUsed = 0;
-        game.phase = "guess_handoff";
-        game.history.push({ number: game.turnNumber, team: game.currentTeam, word, count, guesses: [], ended: false });
-      }
-      function endTurn(game, reason = "主动结束") {
+      function endTurn(game) {
         game.history[game.history.length - 1].ended = true;
-        game.lastTurnSummary = { team: game.currentTeam, reason, guessesUsed: game.guessesUsed };
         game.currentTeam = otherTeam(game.currentTeam);
         game.turnNumber++;
-        game.clue = null;
-        game.guessesUsed = 0;
-        game.phase = "handoff";
+        game.phase = "guess";
+        game.history.push({ number: game.turnNumber, team: game.currentTeam, guesses: [], ended: false });
       }
       function revealCard(game, index) {
         const card = game.cards[index];
         if (game.phase !== "guess" || card.revealed) throw new Error("当前卡片不能被猜测");
         const actingTeam = game.currentTeam;
         card.revealed = true;
-        game.guessesUsed++;
         game.history[game.history.length - 1].guesses.push({ word: card.word, role: card.role });
-        const remainingGuesses = clueLimit(game.clue.count) - game.guessesUsed;
         if (card.role === "assassin") {
           game.winner = otherTeam(actingTeam);
           game.finishReason = { kind: "assassin", word: card.word, loser: actingTeam };
@@ -415,14 +420,12 @@
             game.winner = completedTeam;
             game.finishReason = { kind: "all_agents", word: card.word, gifted: completedTeam !== actingTeam };
             game.phase = "finished";
-          } else if (remainingGuesses === 0) {
-            endTurn(game, "机会已用完");
           }
         }
         if (game.phase === "finished") game.history[game.history.length - 1].ended = true;
-        return { word: card.word, role: card.role, remainingGuesses, turnEnded: game.phase === "handoff", winner: game.winner };
+        return { word: card.word, role: card.role, winner: game.winner };
       }
-      return { WORDS: [...new Set(WORDS)], createGame, agentCounts, clueLimit, setClue, endTurn, revealCard, otherTeam };
+      return { WORDS: [...new Set(WORDS)], createGame, restoreGame, agentCounts, endTurn, revealCard, otherTeam };
     })();
   </script>
   <script id="game-ui">
@@ -449,18 +452,16 @@
       let modalReturnFocus = null;
       let setupFirstTeam = "random";
       let customWordsDraft = "";
-      let clueDraft = { word: "", count: 2 };
       let toastTimer;
       let saveAvailable = true;
       const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
-      const countLabel = count => count === "unlimited" ? "无限" : String(count);
       const teamColor = team => team === "blue" ? "var(--blue)" : "var(--red)";
       function loadGame() {
         try {
           const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-          if (stored?.version === 1 && stored.cards?.length === 25 && Array.isArray(stored.history)
-              && ["handoff", "clue", "guess_handoff", "guess", "finished"].includes(stored.phase)
-              && ["red", "blue"].includes(stored.currentTeam)) return stored;
+          if ([1, 2].includes(stored?.version) && stored.cards?.length === 25 && Array.isArray(stored.history)
+              && ["handoff", "clue", "key", "guess_handoff", "guess", "finished"].includes(stored.phase)
+              && ["red", "blue"].includes(stored.currentTeam)) return Codenames.restoreGame(stored);
         } catch (error) { console.info("未能读取本地对局，将开始新游戏。", error.name); }
         return null;
       }
@@ -475,7 +476,7 @@
         elements.toast.hidden = false;
         toastTimer = setTimeout(() => { elements.toast.hidden = true; }, 3600);
       }
-      function canShowKey() { return game?.phase === "clue" && !privacyLocked && !modalKind; }
+      function canShowKey() { return game?.phase === "key" && !privacyLocked && !modalKind; }
       function render() {
         const boardGame = game || previewGame;
         const keyVisible = canShowKey();
@@ -498,12 +499,11 @@
         const mobileBriefing = document.getElementById("mobile-briefing");
         mobileBriefing.hidden = !keyVisible && game?.phase !== "guess";
         if (keyVisible) {
-          mobileBriefing.innerHTML = '<span>看好密钥，再给队友提示。</span><button data-action="scroll-to-clue">填写提示 ↓</button>';
+          mobileBriefing.innerHTML = '<span>队长视角 · 请守好密钥。</span><button data-action="hide-key">隐藏密钥 →</button>';
         } else if (game?.phase === "guess") {
-          const remaining = Codenames.clueLimit(game.clue.count) - game.guessesUsed;
-          mobileBriefing.innerHTML = `<span>提示：<strong>${escapeHtml(game.clue.word)}，${countLabel(game.clue.count)}</strong></span><span>${Number.isFinite(remaining) ? `还可猜 <strong>${remaining}</strong> 次` : "不限次数"}</span>`;
+          mobileBriefing.innerHTML = `<span>当前：<strong>${TEAM_NAMES[game.currentTeam]}</strong></span><button data-action="end-turn" ${modalKind ? "disabled" : ""}>结束本轮，交给${TEAM_NAMES[Codenames.otherTeam(game.currentTeam)]} →</button>`;
         }
-        elements.board.classList.toggle("covered", game?.phase === "clue" && privacyLocked);
+        elements.board.classList.toggle("covered", game?.phase === "key" && privacyLocked);
         elements.board.innerHTML = boardGame.cards.map((card, index) => {
           const roleVisible = card.revealed || keyVisible || finished;
           const enabled = game?.phase === "guess" && !card.revealed && !modalKind;
@@ -522,38 +522,31 @@
         const kicker = `<div class="panel-kicker"><span>行动简报</span><span><i class="live-dot"></i>${game ? TEAM_NAMES[game.currentTeam] : "等待开局"}</span></div>`;
         if (!game) {
           elements.briefing.innerHTML = `${kicker}<h3 class="panel-title">今晚，谁是王牌特工？</h3><p class="panel-copy">分成红蓝两队，各选一位队长。让一个提示，串起家人的默契。</p><button class="button primary full" data-action="setup">开始一局 →</button><p class="hint">推荐 4 人以上 · 约 15 分钟<br>3 人也能玩：两位队长，共用一位猜词者。</p>`;
-        } else if (game.phase === "clue" && !privacyLocked && !modalKind) {
-          const options = [...Array(9)].map((_, index) => `<option value="${index + 1}" ${clueDraft.count === index + 1 ? "selected" : ""}>${index + 1}</option>`).join("")
-            + `<option value="0" ${clueDraft.count === 0 ? "selected" : ""}>0</option><option value="unlimited" ${clueDraft.count === "unlimited" ? "selected" : ""}>无限</option>`;
-          elements.briefing.innerHTML = `${kicker}<h3 class="panel-title">给出你的提示。</h3><p class="panel-copy">只有一个词，一个数字。<br>剩下的，交给队友的脑回路。</p>
-            <form id="clue-form"><div class="clue-field"><label class="field-label" for="clue-input">提示词</label><input class="input" id="clue-input" name="clue" placeholder="例如：水果" value="${escapeHtml(clueDraft.word)}" maxlength="24" autocomplete="off" required></div>
-            <div class="clue-count-row"><label class="field-label" for="clue-count">关联我方几个词？</label><select class="input" id="clue-count" name="count">${options}</select></div>
-            <p class="error" id="clue-error" role="alert" hidden></p><button class="button team full" type="submit">提交提示 · 隐藏密钥 →</button></form>
-            <p class="hint">数字为 N，最多猜 N＋1 次。<br>0 / 无限：不限次数。<br>切换窗口或离开页面，密钥会自动锁定。</p>`;
-        } else if (game.phase === "guess" || game.phase === "guess_handoff") {
-          const limit = Codenames.clueLimit(game.clue.count);
-          const remaining = limit - game.guessesUsed;
-          const pips = Number.isFinite(limit) ? `<div class="guess-pips">${Array.from({ length: limit }, (_, index) => `<i class="${index < game.guessesUsed ? "spent" : ""}"></i>`).join("")}</div>` : "";
-          const description = game.clue.count === 0 ? "与这个提示无关；你可以回顾之前的提示。" : game.clue.count === "unlimited" ? "自由猜测，可回顾之前的提示。" : `${game.clue.count} 个关联词 ＋ 1 次额外机会`;
-          elements.briefing.innerHTML = `${kicker}<h3 class="panel-title">听懂他的暗号了吗？</h3>
-            <div class="clue-display"><span class="clue-word">${escapeHtml(game.clue.word)}</span><span class="clue-number">${countLabel(game.clue.count)}</span><div class="clue-description">${description}</div></div>
-            <div class="guess-meter"><div class="guess-meter-label">剩余猜词机会${pips}<div style="font-size:10px;margin-top:7px">本轮已猜 ${game.guessesUsed} 次</div></div><div class="guess-meter-count">${Number.isFinite(remaining) ? remaining : "∞"}</div></div>
-            <button class="button full" data-action="end-turn" ${game.guessesUsed === 0 || modalKind || game.phase !== "guess" ? "disabled" : ""}>结束本轮 · 换队 →</button><p class="hint">${game.guessesUsed === 0 ? "至少猜一张，才可以主动结束本轮。" : "没有把握时，可以见好就收。"}</p>`;
+        } else if (game.phase === "key" && !privacyLocked && !modalKind) {
+          elements.briefing.innerHTML = `${kicker}<h3 class="panel-title">看好密钥，口述暗号。</h3><p class="panel-copy">提示词和数量都直接告诉队友。<br>说完后隐藏密钥，把设备交给队员。</p>
+            <button class="button team full" data-action="hide-key">隐藏密钥，返回棋盘 →</button>
+            <p class="hint">切换窗口或离开页面，密钥会自动锁定。</p>`;
+        } else if (game.phase === "guess") {
+          elements.briefing.innerHTML = `${kicker}<h3 class="panel-title">${TEAM_NAMES[game.currentTeam]}，轮到你们了。</h3><p class="panel-copy">听队长口述提示词和数量，<br>一起讨论，再点击卡片确认翻牌。</p>
+            <button class="button team full" data-action="end-turn" ${modalKind ? "disabled" : ""}>结束本轮，交给${TEAM_NAMES[Codenames.otherTeam(game.currentTeam)]} →</button>
+            <button class="button quiet full" data-action="request-key" style="margin-top:8px">队长查看密钥</button>
+            <p class="hint">猜词次数由大家自行掌握，<br>队员决定什么时候交给对方。</p>`;
         } else if (game.phase === "finished") {
           const reason = resultDescription();
           elements.briefing.innerHTML = `${kicker}<h3 class="panel-title" style="color:${teamColor(game.winner)}">${TEAM_NAMES[game.winner]}获胜！</h3><p class="panel-copy">${escapeHtml(reason)}</p>
             <button class="button primary full" data-action="setup">再来一局 ↗</button><button class="button quiet full" data-action="result" style="margin-top:8px">查看本局结果</button>`;
         } else {
-          const isLocked = game.phase === "clue";
-          elements.briefing.innerHTML = `${kicker}<h3 class="panel-title">${isLocked ? "密钥已锁定。" : "轮到队长了。"}</h3><p class="panel-copy">请将设备交给${TEAM_NAMES[game.currentTeam]}队长。猜词的家人先移开视线，给队长一点思考时间。</p><button class="button team full" data-action="handoff">队长接过设备 →</button><p class="hint">只有两位队长可以查看隐藏身份。</p>`;
+          elements.briefing.innerHTML = `${kicker}<h3 class="panel-title">密钥已锁定。</h3><p class="panel-copy">队长确认周围的视线后，可以继续查看密钥。</p>
+            <button class="button team full" data-action="request-key">队长查看密钥</button>
+            <button class="button quiet full" data-action="hide-key" style="margin-top:8px">返回公共棋盘</button>`;
         }
       }
       function renderHistory() {
         const history = game?.history || [];
-        document.getElementById("history-count").textContent = `${history.length} 条提示`;
+        document.getElementById("history-count").textContent = `${history.length} 轮行动`;
         document.getElementById("history-list").innerHTML = history.length ? [...history].reverse().map(turn => `<div class="history-turn ${turn.team}">
-          <div class="history-clue"><small>${TEAM_NAMES[turn.team]} · ${turn.number}</small>${escapeHtml(turn.word)}，${countLabel(turn.count)}</div>
-          <div class="history-guesses">${turn.guesses.length ? turn.guesses.map(guess => `<span class="history-guess ${guess.role}" title="${ROLE_NAMES[guess.role]}">${escapeHtml(guess.word)}</span>`).join("") : '<span class="history-empty">等待猜词…</span>'}</div></div>`).join("") : '<div class="history-empty">每一个提示，每一次选择，<br>都会留在这里，等你们一起复盘。</div>';
+          <div class="history-heading">${TEAM_NAMES[turn.team]} · 第 ${turn.number} 轮<small>${turn.ended ? "已结束" : "进行中"}</small></div>
+          <div class="history-guesses">${turn.guesses.length ? turn.guesses.map(guess => `<span class="history-guess ${guess.role}" title="${ROLE_NAMES[guess.role]}">${escapeHtml(guess.word)}</span>`).join("") : `<span class="history-empty">${turn.ended ? "本轮未翻牌" : "等待猜词…"}</span>`}</div></div>`).join("") : '<div class="history-empty">每轮翻牌结果，<br>都会留在这里，等你们一起复盘。</div>';
       }
       function showModal(kind, contents, wide = false) {
         if (!modalKind) modalReturnFocus = document.activeElement;
@@ -591,7 +584,7 @@
             <p class="hint">默认有 ${Codenames.WORDS.length} 个日常中文词。自定义词建议每个不超过 8 个字。</p></details>
           <p class="error" id="setup-error" role="alert" hidden></p>
           <button class="button primary full" data-action="start-game" data-autofocus>开始行动 →</button>
-          <p class="modal-footnote">${game ? "开始后将替换当前对局。" : "推荐 4 人以上；3 人可共用一位猜词者。"}<br>家庭规则：猜错仍可继续，每张都消耗一次机会。</p>`);
+          <p class="modal-footnote">${game ? "开始后将替换当前对局。" : "推荐 4 人以上；3 人可共用一位猜词者。"}<br>提示词和数量口述，红蓝轮次由队员切换。</p>`);
       }
       function startGame() {
         customWordsDraft = document.getElementById("custom-words")?.value || "";
@@ -608,56 +601,50 @@
           return;
         }
         game = Codenames.createGame(customWords.length ? customWords : Codenames.WORDS, setupFirstTeam);
-        clueDraft = { word: "", count: 2 };
         privacyLocked = true;
         saveGame();
         closeModal();
-        showHandoff();
+        window.scrollTo({ top: 0, behavior: "instant" });
       }
-      function showHandoff() {
+      function showKeyConfirmation() {
         const name = TEAM_NAMES[game.currentTeam];
-        const isGuess = game.phase === "guess_handoff";
-        const isLocked = game.phase === "clue";
-        const previous = !isGuess && !isLocked && game.lastTurnSummary ? `${TEAM_NAMES[game.lastTurnSummary.team]}${game.lastTurnSummary.reason}。轮到${name}行动。` : "";
-        showModal(isGuess ? "guess-handoff" : "head-handoff", `<div class="modal-icon">${ICONS.lock}</div>
+        const isLocked = game.phase === "key" && privacyLocked;
+        showModal("key-confirmation", `<button class="modal-close" data-action="hide-key" aria-label="返回公共棋盘">×</button><div class="modal-icon">${ICONS.lock}</div>
           <div class="eyebrow">第 ${game.turnNumber} 回合 · ${name}</div>
-          <h2 id="modal-title">${isGuess ? "密钥已隐藏。<br>请交给猜词的家人。" : isLocked ? "队长视角已锁定。<br>请确认周围的视线。" : `请把设备，<br>交给${name}队长。`}</h2>
-          <p class="modal-copy">${isGuess ? `队长已提交提示。${name}猜词者接过设备后，就可以开始讨论和翻牌。` : previous || "队长需要私下查看身份。确认猜词者看不到屏幕后，再继续。"}</p>
-          <div class="handoff-steps">${isGuess ?
-            `<div><span>01</span>队长只说提示词和数字，不补充说明。</div><div><span>02</span>猜词的家人接过设备，一起讨论。</div>` :
-            `<div><span>01</span>其他人移开视线，或让队长转过屏幕。</div><div><span>02</span>两位队长可看密钥；猜词者不能看。</div>`}</div>
-          <button class="button team full" data-action="${isGuess ? "begin-guess" : "view-key"}" data-autofocus>${isGuess ? `我是${name}猜词者 · 开始猜词 →` : `我是${name}队长 · 查看密钥 →`}</button>
+          <h2 id="modal-title">${isLocked ? "队长视角已锁定。<br>请确认周围的视线。" : "请把屏幕，<br>交给队长查看。"}</h2>
+          <p class="modal-copy">确认猜词者看不到屏幕后，再查看身份。提示词和数量直接当面口述。</p>
+          <div class="handoff-steps"><div><span>01</span>其他人移开视线，或让队长转过屏幕。</div><div><span>02</span>两位队长可看密钥；猜词者不能看。</div></div>
+          <button class="button team full" data-action="view-key" data-autofocus>我是队长，查看密钥 →</button>
+          <button class="button quiet full" data-action="hide-key" style="margin-top:8px">返回公共棋盘</button>
           <p class="modal-footnote">共享设备的秘密，靠大家一起守护。</p>`);
       }
       function showRules() {
         lockKey(false);
         showModal("rules", `${closeButton}<div class="eyebrow">家庭桌 · 玩法速查</div><h2 id="modal-title">一个提示，一队默契。</h2>
-          <div class="rules-highlight">本版家庭规则：翻到路人或对方特工后，只要还有猜词机会，就可以继续。</div>
+          <div class="rules-highlight">提示词和数量都由队长口述。翻牌次数由大家自行掌握，队员点击按钮手动切换红蓝轮次。</div>
           <ol class="rules">
             <li><span class="rule-index">01</span><div><strong>两队，两个队长</strong><p>红蓝两队各选一位队长。只有队长能看密钥。先手有 9 名特工，后手 8 名，另有 7 名路人和 1 名刺客。</p></div></li>
-            <li><span class="rule-index">02</span><div><strong>队长说：一个词 ＋ 一个数字</strong><p>例如“水果，2”。数字表示与提示相关的我方词语数量。只按词义联想，不用字形、笔画、位置或表情暗示。不能用未翻开的代号词直接作提示。</p></div></li>
-            <li><span class="rule-index">03</span><div><strong>数字 N，最多猜 N＋1 张</strong><p>每翻一张都消耗一次机会。至少猜一张之后可以主动结束；额外的 1 次可以用来猜之前提示没猜完的词。机会用完时自动换队。</p></div></li>
+            <li><span class="rule-index">02</span><div><strong>队长说：一个词 ＋ 一个数字</strong><p>例如“水果，2”，直接当面告诉队友。只按词义联想，不用字形、笔画、位置或表情暗示。不能用未翻开的代号词直接作提示。</p></div></li>
+            <li><span class="rule-index">03</span><div><strong>队员掌握猜词机会，手动换队</strong><p>按口述数字 N，通常最多猜 N＋1 张；额外的 1 次可用于之前提示没猜完的词。网页不限制翻牌次数，也不自动换队。队员决定结束时，点击“结束本轮，交给对方”。</p></div></li>
             <li><span class="rule-index">04</span><div><strong>猜错可以继续，刺客立即判负</strong><p>红蓝特工分别计入对应队伍的进度。路人不增加任何队伍进度。猜到刺客立即输；任何一队找齐全部特工立即赢，包括对方帮你找到最后一名。</p></div></li>
-            <li><span class="rule-index">05</span><div><strong>0 和“无限”提示</strong><p>0 表示没有词与提示相关；“无限”不告知关联数量。两者都不限猜词次数，但仍至少猜一张才能主动结束，刺客和获胜判定照常生效。</p></div></li>
-            <li><span class="rule-index">06</span><div><strong>先约定，再开玩</strong><p>谐音、成语、专有名词和拆词的尺度，开局前一起约定。有争议由两位队长协商。网页只检查与未翻开词语完全相同的提示。</p></div></li>
+            <li><span class="rule-index">05</span><div><strong>0 和“无限”提示</strong><p>0 表示没有词与提示相关；“无限”不告知关联数量。两者都可以继续猜测之前的口头提示，结束时由队员手动换队。</p></div></li>
+            <li><span class="rule-index">06</span><div><strong>先约定，再开玩</strong><p>谐音、成语、专有名词和拆词的尺度，开局前一起约定。提示是否合法，由两位队长当面协商。</p></div></li>
           </ol><button class="button primary full" data-action="close">明白了，继续 →</button>`, true);
       }
       function showSelection(index) {
         const card = game.cards[index];
         showModal("selection", `${closeButton}<div class="eyebrow">${TEAM_NAMES[game.currentTeam]} · 确认猜词</div><h2 id="modal-title">这是你们的选择吗？</h2>
-          <div class="selection-word">${escapeHtml(card.word)}</div><p class="modal-copy">确认后翻开这张牌，并消耗一次猜词机会。<br>队长现在请保持面无表情。</p>
+          <div class="selection-word">${escapeHtml(card.word)}</div><p class="modal-copy">确认后翻开这张牌，并显示它的身份。<br>队长现在请保持面无表情。</p>
           <div class="modal-actions"><button class="button" data-action="close" data-autofocus>再想想</button><button class="button team" data-reveal="${index}">确认翻牌 →</button></div>`);
       }
       function reveal(index) {
         const result = Codenames.revealCard(game, index);
         saveGame();
         closeModal();
-        const remaining = Number.isFinite(result.remainingGuesses) ? `还可猜 ${result.remainingGuesses} 次` : "还可继续猜";
         if (game.phase === "finished") {
           showResult();
         } else {
-          showToast(`${result.word} · ${ROLE_NAMES[result.role]}${result.turnEnded ? "，本轮机会已用完" : `，${remaining}`}`);
-          if (result.turnEnded) { clueDraft = { word: "", count: 2 }; privacyLocked = true; showHandoff(); }
+          showToast(`${result.word} · ${ROLE_NAMES[result.role]}，是否继续猜由队员决定`);
         }
       }
       function resultDescription() {
@@ -668,38 +655,15 @@
       function showResult() {
         showModal("result", `${closeButton}<div class="modal-icon" style="--team:${teamColor(game.winner)}">${ICONS.trophy}</div><div class="eyebrow">任务结束</div>
           <h2 id="modal-title" style="color:${teamColor(game.winner)}">${TEAM_NAMES[game.winner]}，干得漂亮！</h2><p class="modal-copy">${escapeHtml(resultDescription())}</p>
-          <div class="result-statistics"><div><strong>${game.history.length}</strong><span>条提示</span></div><div><strong>${game.cards.filter(card => card.revealed).length}</strong><span>张已翻开的牌</span></div><div><strong>${Codenames.agentCounts(game, game.winner).found}</strong><span>名获胜队特工</span></div></div>
+          <div class="result-statistics"><div><strong>${game.history.length}</strong><span>轮行动</span></div><div><strong>${game.cards.filter(card => card.revealed).length}</strong><span>张已翻开的牌</span></div><div><strong>${Codenames.agentCounts(game, game.winner).found}</strong><span>名获胜队特工</span></div></div>
           <button class="button primary full" data-action="setup" data-autofocus>换个队长，再来一局 ↗</button><button class="button quiet full" data-action="close" style="margin-top:8px">查看完整棋盘</button>`);
       }
-      function lockKey(showHandoffAfter = true) {
-        if (game?.phase === "clue") {
+      function lockKey(showConfirmationAfter = true) {
+        if (game?.phase === "key") {
           privacyLocked = true;
           render();
-          if (showHandoffAfter && !modalKind) showHandoff();
+          if (showConfirmationAfter && !modalKind) showKeyConfirmation();
         }
-      }
-      function submitClue(event) {
-        event.preventDefault();
-        const word = document.getElementById("clue-input").value.trim().normalize("NFC");
-        const countValue = document.getElementById("clue-count").value;
-        const count = countValue === "unlimited" ? "unlimited" : Number(countValue);
-        const error = document.getElementById("clue-error");
-        clueDraft = { word, count };
-        if (!word || /\s/u.test(word)) {
-          error.textContent = "请给出一个词，不要添加空格或解释。";
-          error.hidden = false;
-          return;
-        }
-        if (game.cards.some(card => !card.revealed && card.word.normalize("NFC").toLocaleLowerCase() === word.toLocaleLowerCase())) {
-          error.textContent = "这个词仍在棋盘上，不能直接作为提示。换一个关联词吧。";
-          error.hidden = false;
-          return;
-        }
-        privacyLocked = true;
-        Codenames.setClue(game, word, count);
-        saveGame();
-        render();
-        showHandoff();
       }
       document.addEventListener("click", event => {
         const button = event.target.closest("button");
@@ -719,38 +683,45 @@
           case "start-game": startGame(); break;
           case "close":
             closeModal();
-            if (game?.phase === "clue" && privacyLocked) showHandoff();
+            if (game?.phase === "key" && privacyLocked) showKeyConfirmation();
             break;
-          case "handoff": showHandoff(); break;
+          case "request-key": showKeyConfirmation(); break;
           case "view-key":
-            game.phase = "clue"; privacyLocked = false; saveGame(); closeModal();
-            window.scrollTo({ top: 0, behavior: "instant" });
-            if (window.matchMedia("(min-width: 851px)").matches) document.getElementById("clue-input")?.focus({ preventScroll: true });
-            break;
-          case "begin-guess":
-            game.phase = "guess"; saveGame(); closeModal();
+            game.phase = "key"; privacyLocked = false; saveGame(); closeModal();
             window.scrollTo({ top: 0, behavior: "instant" });
             break;
-          case "scroll-to-clue":
-            elements.briefing.scrollIntoView({ block: "start", behavior: "smooth" });
-            document.getElementById("clue-input")?.focus({ preventScroll: true });
+          case "hide-key":
+            game.phase = "guess"; privacyLocked = true; saveGame();
+            if (modalKind) closeModal(); else render();
+            window.scrollTo({ top: 0, behavior: "instant" });
             break;
           case "end-turn":
-            Codenames.endTurn(game); privacyLocked = true; clueDraft = { word: "", count: 2 };
-            saveGame(); render(); showHandoff(); break;
+            Codenames.endTurn(game); privacyLocked = true;
+            saveGame(); render(); window.scrollTo({ top: 0, behavior: "instant" });
+            showToast(`轮到${TEAM_NAMES[game.currentTeam]}，请听队长口述提示词和数量。`);
+            break;
           case "result": showResult(); break;
         }
       });
-      document.addEventListener("submit", event => { if (event.target.id === "clue-form") submitClue(event); });
       document.addEventListener("input", event => {
-        if (event.target.id === "clue-input") clueDraft.word = event.target.value;
         if (event.target.id === "custom-words") customWordsDraft = event.target.value;
-      });
-      document.addEventListener("change", event => {
-        if (event.target.id === "clue-count") clueDraft.count = event.target.value === "unlimited" ? "unlimited" : Number(event.target.value);
       });
       document.getElementById("new-game-button").addEventListener("click", showSetup);
       document.getElementById("rules-button").addEventListener("click", showRules);
+      window.addEventListener("pwa-lock-key", () => lockKey(false));
+      window.addEventListener("pwa-message", event => showToast(event.detail));
+      window.addEventListener("pwa-install-help", () => {
+        lockKey(false);
+        showModal("install", `${closeButton}<div class="modal-icon">${ICONS.cards}</div>
+          <div class="eyebrow">把家庭桌，放在桌面上</div><h2 id="modal-title">随时开始一场行动。</h2>
+          <div class="handoff-steps">
+            <div><span>01</span>iPhone / iPad：用 Safari 打开，点“分享” → “添加到主屏幕”。</div>
+            <div><span>02</span>安卓：在 Chrome 菜单中选择“安装应用”或“添加到主屏幕”。</div>
+            <div><span>03</span>电脑：使用 Chrome / Edge 的地址栏安装按钮，或 Safari 的“文件” → “添加到程序坞”。</div>
+          </div>
+          <p class="modal-copy">首次联网打开，看到“离线就绪”后，就能断网游玩。对局保存在当前浏览器或已安装的应用中。</p>
+          <button class="button primary full" data-action="close" data-autofocus>明白了，继续 →</button>`);
+      });
       document.getElementById("fullscreen-button").addEventListener("click", async () => {
         try {
           if (document.fullscreenElement) await document.exitFullscreen();
@@ -764,9 +735,9 @@
       window.addEventListener("blur", () => lockKey());
       document.addEventListener("keydown", event => {
         if (!modalKind) return;
-        if (event.key === "Escape" && ["setup", "rules", "selection", "result"].includes(modalKind)) {
+        if (event.key === "Escape" && ["setup", "rules", "selection", "result", "install"].includes(modalKind)) {
           event.preventDefault(); closeModal();
-          if (game?.phase === "clue" && privacyLocked) showHandoff();
+          if (game?.phase === "key" && privacyLocked) showKeyConfirmation();
         }
         if (event.key === "Tab") {
           const focusable = [...elements.modal.querySelectorAll('button:not(:disabled), input, select, textarea, summary')].filter(node => node.getClientRects().length);
@@ -778,11 +749,12 @@
       render();
       if (game) {
         saveGame();
-        if (["handoff", "clue", "guess_handoff"].includes(game.phase)) showHandoff();
+        if (game.phase === "key") showKeyConfirmation();
         else if (game.phase === "finished") showResult();
         else showToast("已恢复这台设备上的对局，继续行动吧。");
       }
     })();
   </script>
+  <script src="./pwa.js"></script>
 </body>
 </html>
