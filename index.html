@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#191b20">
+  <title>行动代号 · 家庭桌</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #191b20;
+      --panel: #22252b;
+      --line: #383b43;
+      --text: #f4f0e9;
+      --muted: #a5a5ac;
+      --red: #f17d73;
+      --blue: #83b7f5;
+      --cream: #eee8dc;
+      --neutral: #c9b998;
+      --team: var(--red);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 12% 0%, #33302f 0, transparent 44%), var(--background);
+      color: var(--text);
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    button:disabled { cursor: default; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+      outline: 3px solid var(--blue);
+      outline-offset: 4px;
+    }
+    button { touch-action: manipulation; }
+    [hidden] { display: none !important; }
+    .shell { width: min(1392px, 100%); padding: 30px 44px 22px; margin: 0 auto; }
+    .header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 34px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-mark { width: 37px; height: 37px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; transform: rotate(-7deg); }
+    .brand-mark i { border-radius: 3px; background: var(--cream); }
+    .brand-mark i:nth-child(2) { background: var(--red); }
+    .brand-mark i:nth-child(3) { background: var(--blue); }
+    .brand-mark i:nth-child(4) { background: #45484e; }
+    h1 { font-size: 25px; letter-spacing: 3px; margin: 0; font-weight: 800; }
+    .brand-subtitle { color: var(--muted); font-size: 10px; letter-spacing: 3px; margin-top: 6px; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .button { border: 1px solid var(--line); color: var(--text); background: #ffffff05; border-radius: 10px; padding: 11px 16px; font-weight: 600; font-size: 13px; transition: background .15s, transform .15s; }
+    .button:hover:not(:disabled) { background: #ffffff0d; }
+    .button:active:not(:disabled) { transform: translateY(1px); }
+    .button:disabled { opacity: .4; }
+    .button.primary { background: var(--cream); color: #26282d; border-color: var(--cream); }
+    .button.primary:hover:not(:disabled) { background: #fff6e5; }
+    .button.team { color: #171b22; background: var(--team); border-color: var(--team); }
+    .button.team:hover:not(:disabled) { filter: brightness(1.07); background: var(--team); }
+    .button.full { width: 100%; padding: 15px 12px; font-size: 14px; }
+    .button.quiet { border-color: transparent; color: var(--muted); }
+    .button.quiet:hover { color: var(--text); }
+    .offline { color: var(--muted); font-size: 11px; white-space: nowrap; display: flex; gap: 7px; align-items: center; margin-right: 9px; }
+    .offline::before { content: ""; width: 6px; height: 6px; background: #a4bda0; border-radius: 50%; }
+    .scoreboard { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center; margin-bottom: 30px; }
+    .score { border: 1px solid var(--line); border-radius: 14px; background: #ffffff03; min-height: 88px; display: flex; gap: 20px; align-items: center; padding: 15px 22px; transition: border-color .2s; }
+    .score.red { --score-color: var(--red); }
+    .score.blue { --score-color: var(--blue); }
+    .score.active { border-color: var(--score-color); background: color-mix(in srgb, var(--score-color) 7%, transparent); }
+    .score-icon { width: 35px; height: 35px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--score-color) 40%, transparent); color: var(--score-color); display: grid; place-items: center; }
+    .score-icon svg { width: 21px; height: 21px; }
+    .score-description { flex: 1; }
+    .score-label { color: var(--score-color); font-size: 14px; font-weight: 700; letter-spacing: 2px; }
+    .score-note { font-size: 11px; margin-top: 6px; color: var(--muted); }
+    .score-remaining { font-size: 33px; font-weight: 750; color: var(--score-color); font-variant-numeric: tabular-nums; line-height: 1; }
+    .score-remaining small { display: block; font-size: 10px; color: var(--muted); font-weight: 400; margin-top: 8px; text-align: center; }
+    .turn-indicator { text-align: center; min-width: 106px; }
+    .eyebrow { font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+    .turn-label { margin-top: 9px; font-size: 15px; color: var(--team); font-weight: 650; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 292px; gap: 28px; align-items: start; }
+    .board-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; min-height: 43px; }
+    .board-heading h2 { font-size: 23px; font-weight: 650; letter-spacing: 1px; margin: 0; }
+    .board-heading p { font-size: 12px; color: var(--muted); margin: 7px 0 0; }
+    .view-badge { border: 1px solid var(--line); border-radius: 7px; font-size: 11px; padding: 9px 11px; color: #c6c6cc; white-space: nowrap; }
+    .view-badge.secret { color: var(--team); border-color: color-mix(in srgb, var(--team) 50%, transparent); }
+    .mobile-briefing { display: none; }
+    .board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+    .card {
+      position: relative; min-width: 0; height: clamp(95px, 8.4vw, 125px); border: 1px solid #f7f0e3;
+      border-radius: 10px; padding: 24px 4px 23px; color: #302f30;
+      background: linear-gradient(145deg, #f5efe3, #e5ddcf);
+      box-shadow: 0 4px 0 #b9af9f, 0 7px 14px #0002;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .16s, box-shadow .16s, filter .16s;
+      user-select: none; overflow: hidden;
+    }
+    .card:not(:disabled):hover { transform: translateY(-3px); box-shadow: 0 6px 0 #b9af9f, 0 12px 19px #0003; }
+    .card:not(:disabled):active { transform: translateY(2px); box-shadow: 0 1px 0 #b9af9f; }
+    .card-word { font-size: clamp(19px, 2vw, 28px); letter-spacing: 2px; font-weight: 750; line-height: 1.15; overflow-wrap: anywhere; }
+    .card-word.long { font-size: clamp(15px, 1.6vw, 21px); letter-spacing: 1px; }
+    .card-number { position: absolute; top: 10px; left: 12px; color: #948b7c; font-size: 9px; font-weight: 500; letter-spacing: 1px; }
+    .card-role { position: absolute; bottom: 9px; font-size: 10px; font-weight: 600; letter-spacing: 2px; }
+    .card-stamp { position: absolute; top: 9px; right: 10px; width: 14px; height: 14px; display: grid; place-items: center; font-size: 12px; }
+    .card.role-red { background: linear-gradient(140deg, #f4a196, #d96c63); border-color: #f2a092; box-shadow: 0 4px 0 #a94e49, 0 7px 14px #0002; color: #401e21; }
+    .card.role-blue { background: linear-gradient(140deg, #a6cbf4, #77a7df); border-color: #a4c9f3; box-shadow: 0 4px 0 #426ea6, 0 7px 14px #0002; color: #142d4d; }
+    .card.role-neutral { background: linear-gradient(140deg, #cabea6, #ad9f88); border-color: #cbbfa7; box-shadow: 0 4px 0 #7e725f, 0 7px 14px #0002; color: #3c352c; }
+    .card.role-assassin { background: linear-gradient(140deg, #36383e, #25262b); border-color: #777177; box-shadow: 0 4px 0 #101114, 0 7px 14px #0002; color: #f2ede4; }
+    .card[class*="role-"] .card-number { color: currentColor; opacity: .6; }
+    .card.revealed { filter: saturate(.65); box-shadow: 0 2px 0 #0007; }
+    .card.revealed .card-word { opacity: .76; }
+    .board.covered .card-word, .board.covered .card-number { visibility: hidden; }
+    .family-rule { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--line); border-radius: 10px; margin-top: 21px; padding: 14px 17px; font-size: 12px; color: #bab9bd; }
+    .family-rule strong { color: #e3dccf; font-weight: 600; }
+    .family-rule .rule-symbol { margin-right: 7px; color: var(--neutral); font-size: 15px; }
+    .legend { display: flex; gap: 15px; font-size: 10px; white-space: nowrap; }
+    .legend span { display: flex; align-items: center; gap: 5px; }
+    .legend i { display: inline-block; height: 6px; width: 6px; border-radius: 2px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    .briefing { padding: 22px; }
+    .panel-kicker { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 10px; letter-spacing: 2px; padding-bottom: 19px; }
+    .live-dot { height: 6px; width: 6px; background: var(--team); border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .panel-title { font-size: 21px; margin: 0 0 9px; font-weight: 650; }
+    .panel-copy { color: var(--muted); font-size: 12px; line-height: 1.8; margin: 0 0 20px; }
+    .clue-display { background: #191b20; border: 1px solid var(--line); border-radius: 9px; padding: 18px; margin: 17px 0; }
+    .clue-word { font-size: 25px; font-weight: 700; overflow-wrap: anywhere; }
+    .clue-number { display: inline-block; margin-left: 10px; color: var(--team); font-size: 17px; font-weight: 650; }
+    .clue-description { font-size: 10px; color: var(--muted); margin-top: 9px; line-height: 1.5; }
+    .guess-meter { display: flex; justify-content: space-between; align-items: center; margin: 22px 0; }
+    .guess-meter-label { font-size: 12px; color: var(--muted); line-height: 1.8; }
+    .guess-meter-count { color: var(--team); font-size: 36px; font-weight: 700; line-height: 1; }
+    .guess-pips { display: flex; gap: 5px; margin-top: 8px; }
+    .guess-pips i { width: 17px; height: 4px; background: var(--team); border-radius: 2px; }
+    .guess-pips i.spent { background: #434650; }
+    .field-label { font-size: 12px; display: block; color: #cdcbd0; margin-bottom: 9px; }
+    .input { width: 100%; color: var(--text); background: #191b20; border: 1px solid #4c4e58; padding: 13px 12px; border-radius: 8px; font-size: 14px; }
+    .input::placeholder { color: #8f8e99; }
+    .clue-field { margin-bottom: 16px; }
+    .clue-count-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+    .clue-count-row .input { width: 96px; }
+    .clue-count-row .field-label { margin: 0; }
+    .hint { font-size: 11px; color: var(--muted); line-height: 1.75; margin: 12px 0 0; }
+    .error { color: #ffa99e; margin: 0 0 13px; line-height: 1.6; font-size: 12px; }
+    .history { border-top: 1px solid var(--line); padding: 20px 22px 10px; }
+    .history-title { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 11px; margin-bottom: 15px; }
+    .history-list { max-height: 200px; overflow: auto; scrollbar-width: thin; }
+    .history-empty { font-size: 11px; line-height: 1.8; color: #91929b; padding-bottom: 13px; }
+    .history-turn { border-left: 2px solid var(--line); padding-left: 12px; margin-bottom: 16px; }
+    .history-turn.red { border-color: var(--red); }
+    .history-turn.blue { border-color: var(--blue); }
+    .history-clue { font-size: 12px; font-weight: 650; margin-bottom: 7px; }
+    .history-clue small { color: var(--muted); font-weight: 400; font-size: 10px; margin-right: 7px; }
+    .history-guesses { display: flex; flex-wrap: wrap; gap: 5px; }
+    .history-guess { border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; font-size: 10px; color: var(--muted); }
+    .history-guess.red { color: var(--red); }
+    .history-guess.blue { color: var(--blue); }
+    .history-guess.neutral { color: var(--neutral); }
+    .history-guess.assassin { color: #f4f0e9; }
+    .footer { display: flex; justify-content: space-between; color: #8f9099; margin-top: 27px; font-size: 10px; letter-spacing: 1px; }
+    .modal-backdrop { position: fixed; z-index: 10; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: #101216c9; backdrop-filter: blur(9px); overflow: auto; }
+    .modal { position: relative; width: min(464px, 100%); max-height: calc(100dvh - 48px); overflow: auto; padding: 31px; border-radius: 19px; background: #25272d; border: 1px solid #4a4b50; box-shadow: 0 30px 100px #0006; }
+    .modal.wide { width: min(580px, 100%); }
+    .modal-close { position: absolute; top: 15px; right: 15px; border: 0; background: transparent; color: var(--muted); height: 30px; width: 30px; font-size: 24px; line-height: 1; border-radius: 7px; }
+    .modal-close:hover { background: #ffffff0c; color: var(--text); }
+    .modal-icon { width: 51px; height: 51px; display: grid; place-items: center; color: var(--team); border: 1px solid color-mix(in srgb, var(--team) 40%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--team) 7%, transparent); margin-bottom: 21px; }
+    .modal-icon svg { width: 27px; height: 27px; }
+    .modal h2 { font-size: 27px; line-height: 1.35; margin: 10px 0 13px; letter-spacing: 1px; }
+    .modal-copy { color: #b8b6bf; font-size: 13px; line-height: 1.9; margin: 0 0 24px; }
+    .modal-footnote { font-size: 11px; color: var(--muted); line-height: 1.75; text-align: center; margin: 13px 0 0; }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions .button { flex: 1; }
+    .handoff-steps { display: flex; flex-direction: column; gap: 13px; padding: 17px; margin: 21px 0 24px; border: 1px solid var(--line); background: #191b2033; border-radius: 10px; }
+    .handoff-steps div { display: flex; gap: 11px; font-size: 12px; color: #c5c2ca; line-height: 1.6; }
+    .handoff-steps span { color: var(--team); font-size: 10px; font-variant-numeric: tabular-nums; }
+    .setup-section { margin: 23px 0; }
+    .segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .segmented button { font-size: 12px; padding: 11px 6px; border-radius: 8px; background: #1d1f24; border: 1px solid var(--line); color: #bdbac5; }
+    .segmented button.selected { border-color: var(--cream); color: var(--cream); background: #efe8db0d; }
+    .setup-info { display: flex; gap: 10px; align-items: center; font-size: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 9px; background: #191b2055; margin: 20px 0; }
+    .setup-info strong { color: var(--cream); }
+    .setup-info span { color: var(--muted); line-height: 1.6; }
+    details { margin: 17px 0 23px; font-size: 12px; color: var(--muted); }
+    summary { cursor: pointer; padding: 6px 0; }
+    details textarea { resize: vertical; min-height: 100px; margin-top: 10px; line-height: 1.7; }
+    .rules { padding: 0; margin: 23px 0; list-style: none; display: flex; flex-direction: column; gap: 17px; }
+    .rules li { display: flex; gap: 13px; }
+    .rules .rule-index { color: var(--team); font-size: 11px; padding-top: 3px; }
+    .rules strong { font-size: 13px; color: #f4f0e9; display: block; margin-bottom: 5px; }
+    .rules p { font-size: 12px; color: #b3b0bb; line-height: 1.85; margin: 0; }
+    .rules-highlight { border: 1px solid #796d58; color: #e2d6bd; background: #cab9980b; padding: 14px 15px; border-radius: 9px; font-size: 12px; line-height: 1.8; }
+    .selection-word { background: var(--cream); color: #302f30; border-radius: 10px; padding: 24px 16px; text-align: center; font-weight: 750; letter-spacing: 3px; font-size: 32px; margin: 21px 0; }
+    .result-statistics { display: flex; border: 1px solid var(--line); border-radius: 10px; margin: 23px 0; padding: 18px; justify-content: space-around; text-align: center; }
+    .result-statistics strong { display: block; font-size: 25px; color: var(--team); }
+    .result-statistics span { display: block; font-size: 10px; color: var(--muted); margin-top: 7px; }
+    .toast { position: fixed; z-index: 20; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); transform: translateX(-50%); max-width: calc(100% - 36px); width: max-content; padding: 14px 21px; border: 1px solid #777078; border-radius: 12px; background: #2c2d34; color: #f4efe7; box-shadow: 0 8px 28px #0005; font-size: 13px; text-align: center; line-height: 1.6; pointer-events: none; }
+    @media (min-width: 1500px) { .card { height: 125px; } }
+    @media (max-width: 1100px) {
+      .shell { padding: 25px 25px 20px; }
+      .layout { grid-template-columns: minmax(0, 1fr) 260px; gap: 21px; }
+      .board { gap: 9px; }
+      .card { height: 100px; }
+      .briefing { padding: 19px; }
+      .history { padding: 18px 19px 9px; }
+      .legend { display: none; }
+    }
+    @media (max-width: 850px) {
+      .layout { grid-template-columns: 1fr; gap: 22px; }
+      .mobile-briefing { display: flex; position: sticky; top: 8px; z-index: 2; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 9px; background: #25272d; font-size: 12px; box-shadow: 0 4px 12px #0002; }
+      .mobile-briefing strong { color: var(--team); font-weight: 650; }
+      .mobile-briefing button { color: var(--team); background: transparent; border: 0; padding: 0; font-size: 12px; }
+      .panel { display: grid; grid-template-columns: 1fr 1fr; }
+      .history { border-top: 0; border-left: 1px solid var(--line); padding: 22px; }
+      .history-list { max-height: 280px; }
+      .card { height: 110px; }
+      .card-word { font-size: 26px; }
+      .card-word.long { font-size: 20px; }
+      .board-heading h2 { font-size: 22px; }
+      .header { margin-bottom: 26px; }
+      .offline { display: none; }
+      .scoreboard { gap: 14px; margin-bottom: 24px; }
+      .score { gap: 12px; padding: 14px; }
+    }
+    @media (max-width: 540px) {
+      .shell { padding: 19px 14px 18px; }
+      .header { gap: 10px; margin-bottom: 23px; }
+      .brand { gap: 9px; }
+      .brand-mark { width: 27px; height: 27px; gap: 3px; }
+      h1 { font-size: 20px; letter-spacing: 2px; }
+      .brand-subtitle { font-size: 8px; letter-spacing: 1.5px; }
+      .header-actions { gap: 1px; }
+      .header-actions .button { padding: 9px 8px; font-size: 11px; }
+      #fullscreen-button { display: none; }
+      .scoreboard { gap: 8px; grid-template-columns: 1fr 65px 1fr; margin-bottom: 21px; }
+      .score { padding: 12px 10px; gap: 6px; min-height: 75px; border-radius: 10px; }
+      .score-icon { display: none; }
+      .score-label { font-size: 12px; letter-spacing: 1px; }
+      .score-note { font-size: 9px; margin-top: 7px; }
+      .score-remaining { font-size: 28px; }
+      .score-remaining small { font-size: 8px; }
+      .turn-indicator { min-width: 0; }
+      .eyebrow { font-size: 8px; letter-spacing: 1px; }
+      .turn-label { font-size: 11px; margin-top: 7px; }
+      .board-heading { gap: 8px; margin-bottom: 14px; }
+      .board-heading h2 { font-size: 19px; letter-spacing: 0; }
+      .board-heading p { font-size: 10px; }
+      .view-badge { font-size: 9px; padding: 7px; }
+      .board { gap: 7px; }
+      .card { height: 76px; padding: 20px 2px 21px; border-radius: 7px; box-shadow: 0 3px 0 #b9af9f; }
+      .card-word { font-size: 17px; letter-spacing: 0; }
+      .card-word.long { font-size: 13px; letter-spacing: 0; }
+      .card-number { top: 7px; left: 7px; font-size: 7px; letter-spacing: 0; }
+      .card-role { bottom: 7px; font-size: 8px; letter-spacing: 0; }
+      .card-stamp { top: 6px; right: 6px; font-size: 9px; }
+      .family-rule { padding: 12px; font-size: 10px; margin-top: 17px; line-height: 1.8; }
+      .family-rule .rule-symbol { margin-right: 4px; }
+      .panel { display: block; }
+      .history { border-left: 0; border-top: 1px solid var(--line); padding: 19px; }
+      .history-list { max-height: 170px; }
+      .briefing { padding: 20px; }
+      .panel-kicker { padding-bottom: 15px; }
+      .panel-title { font-size: 20px; }
+      .panel-copy { margin-bottom: 14px; }
+      .guess-meter { margin: 17px 0; }
+      .footer { font-size: 8px; letter-spacing: 0; gap: 10px; margin-top: 21px; }
+      .modal-backdrop { padding: 15px; }
+      .modal { padding: 25px; max-height: calc(100dvh - 30px); border-radius: 15px; }
+      .modal h2 { font-size: 24px; }
+      .modal-icon { width: 44px; height: 44px; margin-bottom: 18px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div><h1>行动代号</h1><div class="brand-subtitle">CODENAMES / 家庭桌</div></div>
+      </div>
+      <nav class="header-actions" aria-label="游戏菜单">
+        <span class="offline">离线就绪</span>
+        <button class="button quiet" id="rules-button">玩法</button>
+        <button class="button quiet" id="fullscreen-button">全屏</button>
+        <button class="button" id="new-game-button">新对局 ↗</button>
+      </nav>
+    </header>
+    <section class="scoreboard" aria-label="双方特工进度">
+      <div class="score red" id="red-score"></div>
+      <div class="turn-indicator"><div class="eyebrow" id="turn-number">准备行动</div><div class="turn-label" id="turn-label">家庭桌</div></div>
+      <div class="score blue" id="blue-score"></div>
+    </section>
+    <main class="layout">
+      <section aria-label="代号棋盘">
+        <div class="board-heading">
+          <div><h2 id="board-title">寻找你的同伴。</h2><p id="board-description">一个词，连接彼此的脑回路。</p></div>
+          <span class="view-badge" id="view-badge">公共视角</span>
+        </div>
+        <div class="mobile-briefing" id="mobile-briefing" hidden></div>
+        <div class="board" id="board" aria-label="五行五列的代号卡"></div>
+        <div class="family-rule">
+          <span><span class="rule-symbol">↻</span><strong>家庭规则</strong> · 猜到路人或对方特工，有机会就能继续猜</span>
+          <div class="legend" aria-label="身份图例">
+            <span><i style="background:var(--red)"></i>红队</span><span><i style="background:var(--blue)"></i>蓝队</span>
+            <span><i style="background:var(--neutral)"></i>路人</span><span><i style="background:#81818a"></i>刺客</span>
+          </div>
+        </div>
+      </section>
+      <aside class="panel" aria-label="行动简报与对局记录">
+        <div class="briefing" id="briefing"></div>
+        <div class="history">
+          <div class="history-title"><span>本局记录</span><span id="history-count">0 条提示</span></div>
+          <div class="history-list" id="history-list"></div>
+        </div>
+      </aside>
+    </main>
+    <footer class="footer"><span>一家人，一台设备，一场谍战。</span><span id="save-status">中文词库 · 完全离线</span></footer>
+  </div>
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
+    <section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script id="game-engine">
+    "use strict";
+    const Codenames = (() => {
+      const WORDS = `
+        苹果 香蕉 橘子 葡萄 西瓜 草莓 樱桃 桃子 梨子 柠檬 菠萝 椰子 芒果 石榴 蓝莓 柿子
+        面包 蛋糕 饼干 巧克力 糖果 蜂蜜 牛奶 咖啡 茶叶 果汁 酸奶 冰淇淋 豆腐 饺子 包子
+        米饭 面条 火锅 烧烤 披萨 汉堡 汤圆 月饼 鸡蛋 玉米 土豆 番茄 胡萝卜 白菜 南瓜 蘑菇
+        盐巴 酱油 花生 核桃 芝麻 豆浆 奶酪 黄油 薯片 爆米花 火腿 海苔 饭团 年糕 豌豆 辣椒
+        老虎 狮子 大象 长颈鹿 斑马 熊猫 猴子 兔子 松鼠 狐狸 野狼 棕熊 刺猬 骆驼 河马 犀牛
+        小狗 小猫 公鸡 鸭子 白鹅 绵羊 山羊 黄牛 水牛 小猪 马匹 驴子 梅花鹿 袋鼠 考拉 蝙蝠
+        海豚 鲸鱼 鲨鱼 企鹅 海豹 乌龟 青蛙 鳄鱼 章鱼 水母 海星 螃蟹 龙虾 金鱼 蝴蝶 蜜蜂
+        蚂蚁 蜘蛛 蜗牛 蜻蜓 蚯蚓 蝉 孔雀 麻雀 燕子 老鹰 猫头鹰 天鹅 鸽子 乌鸦 萤火虫 恐龙
+        太阳 月亮 星星 地球 火星 银河 宇宙 天空 白云 彩虹 闪电 雷声 雨水 雪花 冰块 雾气
+        高山 河流 湖泊 海洋 沙漠 森林 草原 火山 瀑布 山洞 岛屿 沙滩 溪水 盆地 悬崖 山谷
+        石头 泥土 沙子 珊瑚 贝壳 琥珀 水晶 钻石 黄金 煤炭 石油 温泉 冰山 绿洲 沼泽 极光
+        春天 夏天 秋天 冬天 清晨 黄昏 深夜 阳光 微风 台风 地震 潮水 波浪 北极 南极 地平线
+        玫瑰 牡丹 荷花 菊花 向日葵 梅花 樱花 薰衣草 竹子 松树 柳树 橡树 枫叶 树根 种子 藤蔓
+        飞机 火车 汽车 公交车 轮船 潜艇 自行车 摩托车 火箭 热气球 救护车 消防车 出租车 地铁
+        高铁 帆船 直升机 卡车 马车 滑板 缆车 雪橇 车轮 船桨 船帆 引擎 铁轨 隧道 桥梁 公路
+        红绿灯 斑马线 机场 车站 港口 路牌 地图 指南针 行李箱 护照 车票 船锚 方向盘 头盔
+        钢琴 小提琴 吉他 鼓 笛子 喇叭 口琴 二胡 音符 舞台 剧院 电影 相机 画笔 颜料 画布
+        雕像 风筝 积木 拼图 魔方 玩偶 气球 礼物 贺卡 烟花 灯笼 对联 鞭炮 面具 邮票 明信片
+        书本 报纸 杂志 铅笔 橡皮 尺子 圆规 书包 黑板 粉笔 作业 试卷 字典 墨水 毛笔 书签
+        电脑 手机 键盘 鼠标 屏幕 耳机 电视 收音机 电池 电线 灯泡 电风扇 空调 冰箱 洗衣机
+        沙发 椅子 桌子 柜子 床 枕头 被子 窗帘 地毯 镜子 闹钟 花瓶 蜡烛 钥匙 锁 门铃
+        雨伞 雨衣 帽子 围巾 手套 袜子 鞋子 裙子 衬衫 毛衣 外套 纽扣 拉链 领带 眼镜 手表
+        戒指 项链 手链 钱包 梳子 牙刷 毛巾 肥皂 香水 口红 剪刀 针线 绳子 胶水 胶带 手电筒
+        锤子 钉子 螺丝 扳手 铲子 水桶 扫帚 拖把 锅 碗 筷子 勺子 盘子 茶壶 杯子 牙签
+        足球 篮球 排球 网球 羽毛球 乒乓球 游泳 滑雪 跑步 跳绳 拳击 射箭 钓鱼 登山 瑜伽
+        球门 球拍 奖杯 金牌 裁判 赛道 操场 泳池 健身房 运动鞋 旗帜 接力棒 望远镜 帐篷
+        医生 护士 老师 学生 厨师 司机 飞行员 船长 农民 渔民 画家 歌手 演员 作家 邮递员
+        警察 消防员 宇航员 科学家 魔术师 园丁 木匠 侦探 国王 女王 骑士 公主 小丑 机器人
+        学校 医院 超市 商场 银行 邮局 公园 动物园 博物馆 图书馆 餐厅 面包店 工厂 农场 城堡
+        教堂 灯塔 小屋 帐篷屋 花园 广场 水族馆 游乐园 摩天轮 旋转木马 过山车 滑梯 秋千
+        长城 金字塔 钟楼 宫殿 宝塔 风车 水井 喷泉 阳台 楼梯 电梯 屋顶 烟囱 栅栏 码头
+        生日 婚礼 假期 春节 中秋节 儿童节 周末 旅行 野餐 露营 梦境 故事 魔法 宝藏 迷宫
+        时间 影子 回声 记忆 勇气 友谊 笑容 拥抱 爱心 秘密 幸运 愿望 奇迹 冒险 游戏 谜语
+        眼睛 耳朵 鼻子 嘴巴 手指 脚印 心脏 骨头 羽毛 翅膀 尾巴 触角 牙齿 头发 绷带 听诊器
+      `.trim().split(/\s+/);
+      const otherTeam = team => team === "red" ? "blue" : "red";
+      function shuffle(items, random = Math.random) {
+        const shuffled = [...items];
+        for (let index = shuffled.length - 1; index > 0; index--) {
+          const swapIndex = Math.floor(random() * (index + 1));
+          [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+        }
+        return shuffled;
+      }
+      function createGame(wordPool = WORDS, firstTeam = "random", random = Math.random) {
+        const startingTeam = firstTeam === "random" ? (random() < .5 ? "red" : "blue") : firstTeam;
+        const roles = shuffle([
+          ...Array(9).fill(startingTeam), ...Array(8).fill(otherTeam(startingTeam)),
+          ...Array(7).fill("neutral"), "assassin"
+        ], random);
+        return {
+          version: 1, startingTeam, currentTeam: startingTeam, phase: "handoff",
+          cards: shuffle([...new Set(wordPool)], random).slice(0, 25).map((word, index) => ({ word, role: roles[index], revealed: false })),
+          turnNumber: 1, clue: null, guessesUsed: 0, history: [], winner: null, finishReason: null,
+          lastTurnSummary: null, createdAt: Date.now()
+        };
+      }
+      function agentCounts(game, team) {
+        const cards = game.cards.filter(card => card.role === team);
+        return { total: cards.length, found: cards.filter(card => card.revealed).length, remaining: cards.filter(card => !card.revealed).length };
+      }
+      function clueLimit(count) { return count === 0 || count === "unlimited" ? Infinity : count + 1; }
+      function setClue(game, word, count) {
+        game.clue = { word, count };
+        game.guessesUsed = 0;
+        game.phase = "guess_handoff";
+        game.history.push({ number: game.turnNumber, team: game.currentTeam, word, count, guesses: [], ended: false });
+      }
+      function endTurn(game, reason = "主动结束") {
+        game.history[game.history.length - 1].ended = true;
+        game.lastTurnSummary = { team: game.currentTeam, reason, guessesUsed: game.guessesUsed };
+        game.currentTeam = otherTeam(game.currentTeam);
+        game.turnNumber++;
+        game.clue = null;
+        game.guessesUsed = 0;
+        game.phase = "handoff";
+      }
+      function revealCard(game, index) {
+        const card = game.cards[index];
+        if (game.phase !== "guess" || card.revealed) throw new Error("当前卡片不能被猜测");
+        const actingTeam = game.currentTeam;
+        card.revealed = true;
+        game.guessesUsed++;
+        game.history[game.history.length - 1].guesses.push({ word: card.word, role: card.role });
+        const remainingGuesses = clueLimit(game.clue.count) - game.guessesUsed;
+        if (card.role === "assassin") {
+          game.winner = otherTeam(actingTeam);
+          game.finishReason = { kind: "assassin", word: card.word, loser: actingTeam };
+          game.phase = "finished";
+        } else {
+          const completedTeam = ["red", "blue"].find(team => agentCounts(game, team).remaining === 0);
+          if (completedTeam) {
+            game.winner = completedTeam;
+            game.finishReason = { kind: "all_agents", word: card.word, gifted: completedTeam !== actingTeam };
+            game.phase = "finished";
+          } else if (remainingGuesses === 0) {
+            endTurn(game, "机会已用完");
+          }
+        }
+        if (game.phase === "finished") game.history[game.history.length - 1].ended = true;
+        return { word: card.word, role: card.role, remainingGuesses, turnEnded: game.phase === "handoff", winner: game.winner };
+      }
+      return { WORDS: [...new Set(WORDS)], createGame, agentCounts, clueLimit, setClue, endTurn, revealCard, otherTeam };
+    })();
+  </script>
+  <script id="game-ui">
+    "use strict";
+    (() => {
+      const STORAGE_KEY = "codenames-family-v1";
+      const TEAM_NAMES = { red: "红队", blue: "蓝队" };
+      const ROLE_NAMES = { red: "红队特工", blue: "蓝队特工", neutral: "无辜路人", assassin: "刺客" };
+      const ICONS = {
+        agent: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 10h16M7 10l2-6h6l2 6M5 19c1-3 3-4 7-4s6 1 7 4"/><path d="M7 11v2h3v-2m4 0v2h3v-2m-7 0h4"/></svg>',
+        lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg>',
+        cards: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="7" y="4" width="13" height="16" rx="2"/><path d="M5 7H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h11m-5-11h5m-5 4h3"/></svg>',
+        trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 3h8v7a4 4 0 0 1-8 0V3Zm0 2H4v3a4 4 0 0 0 4 4m8-7h4v3a4 4 0 0 1-4 4m-4 2v5m-4 2h8"/></svg>'
+      };
+      const elements = {
+        board: document.getElementById("board"), briefing: document.getElementById("briefing"),
+        backdrop: document.getElementById("modal-backdrop"), modal: document.getElementById("modal"),
+        toast: document.getElementById("toast")
+      };
+      let game = loadGame();
+      let previewGame = game || Codenames.createGame(Codenames.WORDS, "red");
+      let privacyLocked = true;
+      let modalKind = null;
+      let modalReturnFocus = null;
+      let setupFirstTeam = "random";
+      let customWordsDraft = "";
+      let clueDraft = { word: "", count: 2 };
+      let toastTimer;
+      let saveAvailable = true;
+      const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
+      const countLabel = count => count === "unlimited" ? "无限" : String(count);
+      const teamColor = team => team === "blue" ? "var(--blue)" : "var(--red)";
+      function loadGame() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          if (stored?.version === 1 && stored.cards?.length === 25 && Array.isArray(stored.history)
+              && ["handoff", "clue", "guess_handoff", "guess", "finished"].includes(stored.phase)
+              && ["red", "blue"].includes(stored.currentTeam)) return stored;
+        } catch (error) { console.info("未能读取本地对局，将开始新游戏。", error.name); }
+        return null;
+      }
+      function saveGame() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(game)); saveAvailable = true; }
+        catch (error) { saveAvailable = false; console.info("浏览器未提供本地保存，当前对局可正常游玩。", error.name); }
+        document.getElementById("save-status").textContent = saveAvailable ? "对局已保存在这台设备" : "当前浏览器不支持保存 · 请保持页面打开";
+      }
+      function showToast(message) {
+        clearTimeout(toastTimer);
+        elements.toast.textContent = message;
+        elements.toast.hidden = false;
+        toastTimer = setTimeout(() => { elements.toast.hidden = true; }, 3600);
+      }
+      function canShowKey() { return game?.phase === "clue" && !privacyLocked && !modalKind; }
+      function render() {
+        const boardGame = game || previewGame;
+        const keyVisible = canShowKey();
+        const finished = game?.phase === "finished";
+        const actingTeam = finished ? game.winner : (game?.currentTeam || "red");
+        document.documentElement.style.setProperty("--team", teamColor(actingTeam));
+        ["red", "blue"].forEach(team => {
+          const counts = Codenames.agentCounts(boardGame, team);
+          const score = document.getElementById(team + "-score");
+          score.classList.toggle("active", Boolean(game) && actingTeam === team);
+          score.innerHTML = `<span class="score-icon">${ICONS.agent}</span><div class="score-description"><div class="score-label">${TEAM_NAMES[team]}</div><div class="score-note">已找到 ${counts.found} / ${counts.total} 名</div></div><div class="score-remaining">${counts.remaining}<small>待接头</small></div>`;
+        });
+        document.getElementById("turn-number").textContent = game ? `第 ${game.turnNumber} 回合` : "准备行动";
+        document.getElementById("turn-label").textContent = finished ? `${TEAM_NAMES[game.winner]}获胜` : game ? `${TEAM_NAMES[game.currentTeam]}行动` : "家庭桌";
+        document.getElementById("board-title").textContent = keyVisible ? "只有你知道，全场的秘密。" : finished ? "今晚的行动，圆满收场。" : "寻找你的同伴。";
+        document.getElementById("board-description").textContent = keyVisible ? "先找到刺客，再给队友一个漂亮的提示。" : finished ? "完整密钥已公开，可以一起复盘这场冒险。" : "一个词，连接彼此的脑回路。";
+        const badge = document.getElementById("view-badge");
+        badge.textContent = keyVisible ? "◈ 队长视角" : finished ? "完整密钥" : "公共视角";
+        badge.classList.toggle("secret", keyVisible);
+        const mobileBriefing = document.getElementById("mobile-briefing");
+        mobileBriefing.hidden = !keyVisible && game?.phase !== "guess";
+        if (keyVisible) {
+          mobileBriefing.innerHTML = '<span>看好密钥，再给队友提示。</span><button data-action="scroll-to-clue">填写提示 ↓</button>';
+        } else if (game?.phase === "guess") {
+          const remaining = Codenames.clueLimit(game.clue.count) - game.guessesUsed;
+          mobileBriefing.innerHTML = `<span>提示：<strong>${escapeHtml(game.clue.word)}，${countLabel(game.clue.count)}</strong></span><span>${Number.isFinite(remaining) ? `还可猜 <strong>${remaining}</strong> 次` : "不限次数"}</span>`;
+        }
+        elements.board.classList.toggle("covered", game?.phase === "clue" && privacyLocked);
+        elements.board.innerHTML = boardGame.cards.map((card, index) => {
+          const roleVisible = card.revealed || keyVisible || finished;
+          const enabled = game?.phase === "guess" && !card.revealed && !modalKind;
+          const label = roleVisible ? `${card.word}，${ROLE_NAMES[card.role]}${card.revealed ? "，已翻开" : ""}` : `${card.word}，未翻开`;
+          return `<button class="card ${roleVisible ? "role-" + card.role : ""} ${card.revealed ? "revealed" : ""}" data-card="${index}" aria-label="${escapeHtml(label)}" ${enabled ? "" : "disabled"}>
+            <span class="card-number">代号 ${String(index + 1).padStart(2, "0")}</span>
+            <span class="card-word ${[...card.word].length > 3 ? "long" : ""}">${escapeHtml(card.word)}</span>
+            ${roleVisible ? `<span class="card-role">${ROLE_NAMES[card.role]}</span>` : ""}
+            ${card.revealed ? '<span class="card-stamp" aria-hidden="true">✓</span>' : roleVisible && card.role === "assassin" ? '<span class="card-stamp" aria-hidden="true">×</span>' : ""}
+          </button>`;
+        }).join("");
+        renderBriefing();
+        renderHistory();
+      }
+      function renderBriefing() {
+        const kicker = `<div class="panel-kicker"><span>行动简报</span><span><i class="live-dot"></i>${game ? TEAM_NAMES[game.currentTeam] : "等待开局"}</span></div>`;
+        if (!game) {
+          elements.briefing.innerHTML = `${kicker}<h3 class="panel-title">今晚，谁是王牌特工？</h3><p class="panel-copy">分成红蓝两队，各选一位队长。让一个提示，串起家人的默契。</p><button class="button primary full" data-action="setup">开始一局 →</button><p class="hint">推荐 4 人以上 · 约 15 分钟<br>3 人也能玩：两位队长，共用一位猜词者。</p>`;
+        } else if (game.phase === "clue" && !privacyLocked && !modalKind) {
+          const options = [...Array(9)].map((_, index) => `<option value="${index + 1}" ${clueDraft.count === index + 1 ? "selected" : ""}>${index + 1}</option>`).join("")
+            + `<option value="0" ${clueDraft.count === 0 ? "selected" : ""}>0</option><option value="unlimited" ${clueDraft.count === "unlimited" ? "selected" : ""}>无限</option>`;
+          elements.briefing.innerHTML = `${kicker}<h3 class="panel-title">给出你的提示。</h3><p class="panel-copy">只有一个词，一个数字。<br>剩下的，交给队友的脑回路。</p>
+            <form id="clue-form"><div class="clue-field"><label class="field-label" for="clue-input">提示词</label><input class="input" id="clue-input" name="clue" placeholder="例如：水果" value="${escapeHtml(clueDraft.word)}" maxlength="24" autocomplete="off" required></div>
+            <div class="clue-count-row"><label class="field-label" for="clue-count">关联我方几个词？</label><select class="input" id="clue-count" name="count">${options}</select></div>
+            <p class="error" id="clue-error" role="alert" hidden></p><button class="button team full" type="submit">提交提示 · 隐藏密钥 →</button></form>
+            <p class="hint">数字为 N，最多猜 N＋1 次。<br>0 / 无限：不限次数。<br>切换窗口或离开页面，密钥会自动锁定。</p>`;
+        } else if (game.phase === "guess" || game.phase === "guess_handoff") {
+          const limit = Codenames.clueLimit(game.clue.count);
+          const remaining = limit - game.guessesUsed;
+          const pips = Number.isFinite(limit) ? `<div class="guess-pips">${Array.from({ length: limit }, (_, index) => `<i class="${index < game.guessesUsed ? "spent" : ""}"></i>`).join("")}</div>` : "";
+          const description = game.clue.count === 0 ? "与这个提示无关；你可以回顾之前的提示。" : game.clue.count === "unlimited" ? "自由猜测，可回顾之前的提示。" : `${game.clue.count} 个关联词 ＋ 1 次额外机会`;
+          elements.briefing.innerHTML = `${kicker}<h3 class="panel-title">听懂他的暗号了吗？</h3>
+            <div class="clue-display"><span class="clue-word">${escapeHtml(game.clue.word)}</span><span class="clue-number">${countLabel(game.clue.count)}</span><div class="clue-description">${description}</div></div>
+            <div class="guess-meter"><div class="guess-meter-label">剩余猜词机会${pips}<div style="font-size:10px;margin-top:7px">本轮已猜 ${game.guessesUsed} 次</div></div><div class="guess-meter-count">${Number.isFinite(remaining) ? remaining : "∞"}</div></div>
+            <button class="button full" data-action="end-turn" ${game.guessesUsed === 0 || modalKind || game.phase !== "guess" ? "disabled" : ""}>结束本轮 · 换队 →</button><p class="hint">${game.guessesUsed === 0 ? "至少猜一张，才可以主动结束本轮。" : "没有把握时，可以见好就收。"}</p>`;
+        } else if (game.phase === "finished") {
+          const reason = resultDescription();
+          elements.briefing.innerHTML = `${kicker}<h3 class="panel-title" style="color:${teamColor(game.winner)}">${TEAM_NAMES[game.winner]}获胜！</h3><p class="panel-copy">${escapeHtml(reason)}</p>
+            <button class="button primary full" data-action="setup">再来一局 ↗</button><button class="button quiet full" data-action="result" style="margin-top:8px">查看本局结果</button>`;
+        } else {
+          const isLocked = game.phase === "clue";
+          elements.briefing.innerHTML = `${kicker}<h3 class="panel-title">${isLocked ? "密钥已锁定。" : "轮到队长了。"}</h3><p class="panel-copy">请将设备交给${TEAM_NAMES[game.currentTeam]}队长。猜词的家人先移开视线，给队长一点思考时间。</p><button class="button team full" data-action="handoff">队长接过设备 →</button><p class="hint">只有两位队长可以查看隐藏身份。</p>`;
+        }
+      }
+      function renderHistory() {
+        const history = game?.history || [];
+        document.getElementById("history-count").textContent = `${history.length} 条提示`;
+        document.getElementById("history-list").innerHTML = history.length ? [...history].reverse().map(turn => `<div class="history-turn ${turn.team}">
+          <div class="history-clue"><small>${TEAM_NAMES[turn.team]} · ${turn.number}</small>${escapeHtml(turn.word)}，${countLabel(turn.count)}</div>
+          <div class="history-guesses">${turn.guesses.length ? turn.guesses.map(guess => `<span class="history-guess ${guess.role}" title="${ROLE_NAMES[guess.role]}">${escapeHtml(guess.word)}</span>`).join("") : '<span class="history-empty">等待猜词…</span>'}</div></div>`).join("") : '<div class="history-empty">每一个提示，每一次选择，<br>都会留在这里，等你们一起复盘。</div>';
+      }
+      function showModal(kind, contents, wide = false) {
+        if (!modalKind) modalReturnFocus = document.activeElement;
+        modalKind = kind;
+        elements.modal.classList.toggle("wide", wide);
+        elements.modal.innerHTML = contents;
+        elements.backdrop.hidden = false;
+        document.querySelector(".shell").inert = true;
+        render();
+        requestAnimationFrame(() => {
+          const target = elements.modal.querySelector("[data-autofocus]") || elements.modal.querySelector("button, input, select, textarea, summary");
+          target?.focus({ preventScroll: true });
+        });
+      }
+      function closeModal() {
+        elements.backdrop.hidden = true;
+        elements.modal.innerHTML = "";
+        modalKind = null;
+        document.querySelector(".shell").inert = false;
+        render();
+        if (modalReturnFocus?.isConnected && !modalReturnFocus.disabled) modalReturnFocus.focus({ preventScroll: true });
+        modalReturnFocus = null;
+      }
+      const closeButton = '<button class="modal-close" data-action="close" aria-label="关闭弹窗">×</button>';
+      function showSetup() {
+        lockKey(false);
+        showModal("setup", `${closeButton}<div class="modal-icon">${ICONS.cards}</div><div class="eyebrow">今晚的家庭任务</div><h2 id="modal-title">把默契，摆上桌。</h2>
+          <p class="modal-copy">红蓝两队，各选一位队长。其余人猜词。<br>一台设备轮流传递，所有人一起参与。</p>
+          <div class="setup-section"><label class="field-label">谁先行动？</label><div class="segmented">
+            ${[["random", "随机先手"], ["red", "红队先手"], ["blue", "蓝队先手"]].map(([team, label]) => `<button data-first-team="${team}" aria-pressed="${setupFirstTeam === team}" class="${setupFirstTeam === team ? "selected" : ""}">${label}</button>`).join("")}
+          </div></div>
+          <div class="setup-info"><strong>5 × 5</strong><span>先手 9 名 · 后手 8 名<br>7 名路人 · 1 名刺客</span></div>
+          <details ${customWordsDraft ? "open" : ""}><summary>想用自己的词？（可选）</summary>
+            <textarea class="input" id="custom-words" placeholder="粘贴至少 25 个不同的词，用空格、逗号或换行分隔。留空使用家庭词库。">${escapeHtml(customWordsDraft)}</textarea>
+            <p class="hint">默认有 ${Codenames.WORDS.length} 个日常中文词。自定义词建议每个不超过 8 个字。</p></details>
+          <p class="error" id="setup-error" role="alert" hidden></p>
+          <button class="button primary full" data-action="start-game" data-autofocus>开始行动 →</button>
+          <p class="modal-footnote">${game ? "开始后将替换当前对局。" : "推荐 4 人以上；3 人可共用一位猜词者。"}<br>家庭规则：猜错仍可继续，每张都消耗一次机会。</p>`);
+      }
+      function startGame() {
+        customWordsDraft = document.getElementById("custom-words")?.value || "";
+        const customWords = [...new Set(customWordsDraft.trim().split(/[\s,，;；、]+/u).filter(Boolean))];
+        const error = document.getElementById("setup-error");
+        if (customWordsDraft.trim() && customWords.length < 25) {
+          error.textContent = `目前只有 ${customWords.length} 个不同的词，请补充到至少 25 个。`;
+          error.hidden = false;
+          return;
+        }
+        if (customWords.some(word => [...word].length > 8)) {
+          error.textContent = "自定义词请控制在 8 个字以内，方便在棋盘上显示。";
+          error.hidden = false;
+          return;
+        }
+        game = Codenames.createGame(customWords.length ? customWords : Codenames.WORDS, setupFirstTeam);
+        clueDraft = { word: "", count: 2 };
+        privacyLocked = true;
+        saveGame();
+        closeModal();
+        showHandoff();
+      }
+      function showHandoff() {
+        const name = TEAM_NAMES[game.currentTeam];
+        const isGuess = game.phase === "guess_handoff";
+        const isLocked = game.phase === "clue";
+        const previous = !isGuess && !isLocked && game.lastTurnSummary ? `${TEAM_NAMES[game.lastTurnSummary.team]}${game.lastTurnSummary.reason}。轮到${name}行动。` : "";
+        showModal(isGuess ? "guess-handoff" : "head-handoff", `<div class="modal-icon">${ICONS.lock}</div>
+          <div class="eyebrow">第 ${game.turnNumber} 回合 · ${name}</div>
+          <h2 id="modal-title">${isGuess ? "密钥已隐藏。<br>请交给猜词的家人。" : isLocked ? "队长视角已锁定。<br>请确认周围的视线。" : `请把设备，<br>交给${name}队长。`}</h2>
+          <p class="modal-copy">${isGuess ? `队长已提交提示。${name}猜词者接过设备后，就可以开始讨论和翻牌。` : previous || "队长需要私下查看身份。确认猜词者看不到屏幕后，再继续。"}</p>
+          <div class="handoff-steps">${isGuess ?
+            `<div><span>01</span>队长只说提示词和数字，不补充说明。</div><div><span>02</span>猜词的家人接过设备，一起讨论。</div>` :
+            `<div><span>01</span>其他人移开视线，或让队长转过屏幕。</div><div><span>02</span>两位队长可看密钥；猜词者不能看。</div>`}</div>
+          <button class="button team full" data-action="${isGuess ? "begin-guess" : "view-key"}" data-autofocus>${isGuess ? `我是${name}猜词者 · 开始猜词 →` : `我是${name}队长 · 查看密钥 →`}</button>
+          <p class="modal-footnote">共享设备的秘密，靠大家一起守护。</p>`);
+      }
+      function showRules() {
+        lockKey(false);
+        showModal("rules", `${closeButton}<div class="eyebrow">家庭桌 · 玩法速查</div><h2 id="modal-title">一个提示，一队默契。</h2>
+          <div class="rules-highlight">本版家庭规则：翻到路人或对方特工后，只要还有猜词机会，就可以继续。</div>
+          <ol class="rules">
+            <li><span class="rule-index">01</span><div><strong>两队，两个队长</strong><p>红蓝两队各选一位队长。只有队长能看密钥。先手有 9 名特工，后手 8 名，另有 7 名路人和 1 名刺客。</p></div></li>
+            <li><span class="rule-index">02</span><div><strong>队长说：一个词 ＋ 一个数字</strong><p>例如“水果，2”。数字表示与提示相关的我方词语数量。只按词义联想，不用字形、笔画、位置或表情暗示。不能用未翻开的代号词直接作提示。</p></div></li>
+            <li><span class="rule-index">03</span><div><strong>数字 N，最多猜 N＋1 张</strong><p>每翻一张都消耗一次机会。至少猜一张之后可以主动结束；额外的 1 次可以用来猜之前提示没猜完的词。机会用完时自动换队。</p></div></li>
+            <li><span class="rule-index">04</span><div><strong>猜错可以继续，刺客立即判负</strong><p>红蓝特工分别计入对应队伍的进度。路人不增加任何队伍进度。猜到刺客立即输；任何一队找齐全部特工立即赢，包括对方帮你找到最后一名。</p></div></li>
+            <li><span class="rule-index">05</span><div><strong>0 和“无限”提示</strong><p>0 表示没有词与提示相关；“无限”不告知关联数量。两者都不限猜词次数，但仍至少猜一张才能主动结束，刺客和获胜判定照常生效。</p></div></li>
+            <li><span class="rule-index">06</span><div><strong>先约定，再开玩</strong><p>谐音、成语、专有名词和拆词的尺度，开局前一起约定。有争议由两位队长协商。网页只检查与未翻开词语完全相同的提示。</p></div></li>
+          </ol><button class="button primary full" data-action="close">明白了，继续 →</button>`, true);
+      }
+      function showSelection(index) {
+        const card = game.cards[index];
+        showModal("selection", `${closeButton}<div class="eyebrow">${TEAM_NAMES[game.currentTeam]} · 确认猜词</div><h2 id="modal-title">这是你们的选择吗？</h2>
+          <div class="selection-word">${escapeHtml(card.word)}</div><p class="modal-copy">确认后翻开这张牌，并消耗一次猜词机会。<br>队长现在请保持面无表情。</p>
+          <div class="modal-actions"><button class="button" data-action="close" data-autofocus>再想想</button><button class="button team" data-reveal="${index}">确认翻牌 →</button></div>`);
+      }
+      function reveal(index) {
+        const result = Codenames.revealCard(game, index);
+        saveGame();
+        closeModal();
+        const remaining = Number.isFinite(result.remainingGuesses) ? `还可猜 ${result.remainingGuesses} 次` : "还可继续猜";
+        if (game.phase === "finished") {
+          showResult();
+        } else {
+          showToast(`${result.word} · ${ROLE_NAMES[result.role]}${result.turnEnded ? "，本轮机会已用完" : `，${remaining}`}`);
+          if (result.turnEnded) { clueDraft = { word: "", count: 2 }; privacyLocked = true; showHandoff(); }
+        }
+      }
+      function resultDescription() {
+        if (game.finishReason.kind === "assassin") return `${TEAM_NAMES[game.finishReason.loser]}翻开了刺客“${game.finishReason.word}”，${TEAM_NAMES[game.winner]}赢得本局。`;
+        if (game.finishReason.gifted) return `对方翻开了“${game.finishReason.word}”，帮${TEAM_NAMES[game.winner]}找到了最后一名特工！`;
+        return `${TEAM_NAMES[game.winner]}率先找齐了全部特工。漂亮的配合！`;
+      }
+      function showResult() {
+        showModal("result", `${closeButton}<div class="modal-icon" style="--team:${teamColor(game.winner)}">${ICONS.trophy}</div><div class="eyebrow">任务结束</div>
+          <h2 id="modal-title" style="color:${teamColor(game.winner)}">${TEAM_NAMES[game.winner]}，干得漂亮！</h2><p class="modal-copy">${escapeHtml(resultDescription())}</p>
+          <div class="result-statistics"><div><strong>${game.history.length}</strong><span>条提示</span></div><div><strong>${game.cards.filter(card => card.revealed).length}</strong><span>张已翻开的牌</span></div><div><strong>${Codenames.agentCounts(game, game.winner).found}</strong><span>名获胜队特工</span></div></div>
+          <button class="button primary full" data-action="setup" data-autofocus>换个队长，再来一局 ↗</button><button class="button quiet full" data-action="close" style="margin-top:8px">查看完整棋盘</button>`);
+      }
+      function lockKey(showHandoffAfter = true) {
+        if (game?.phase === "clue") {
+          privacyLocked = true;
+          render();
+          if (showHandoffAfter && !modalKind) showHandoff();
+        }
+      }
+      function submitClue(event) {
+        event.preventDefault();
+        const word = document.getElementById("clue-input").value.trim().normalize("NFC");
+        const countValue = document.getElementById("clue-count").value;
+        const count = countValue === "unlimited" ? "unlimited" : Number(countValue);
+        const error = document.getElementById("clue-error");
+        clueDraft = { word, count };
+        if (!word || /\s/u.test(word)) {
+          error.textContent = "请给出一个词，不要添加空格或解释。";
+          error.hidden = false;
+          return;
+        }
+        if (game.cards.some(card => !card.revealed && card.word.normalize("NFC").toLocaleLowerCase() === word.toLocaleLowerCase())) {
+          error.textContent = "这个词仍在棋盘上，不能直接作为提示。换一个关联词吧。";
+          error.hidden = false;
+          return;
+        }
+        privacyLocked = true;
+        Codenames.setClue(game, word, count);
+        saveGame();
+        render();
+        showHandoff();
+      }
+      document.addEventListener("click", event => {
+        const button = event.target.closest("button");
+        if (!button || button.disabled) return;
+        if (button.hasAttribute("data-card")) { showSelection(Number(button.dataset.card)); return; }
+        if (button.hasAttribute("data-reveal")) { reveal(Number(button.dataset.reveal)); return; }
+        if (button.hasAttribute("data-first-team")) {
+          setupFirstTeam = button.dataset.firstTeam;
+          elements.modal.querySelectorAll("[data-first-team]").forEach(option => {
+            option.classList.toggle("selected", option.dataset.firstTeam === setupFirstTeam);
+            option.setAttribute("aria-pressed", String(option.dataset.firstTeam === setupFirstTeam));
+          });
+          return;
+        }
+        switch (button.dataset.action) {
+          case "setup": showSetup(); break;
+          case "start-game": startGame(); break;
+          case "close":
+            closeModal();
+            if (game?.phase === "clue" && privacyLocked) showHandoff();
+            break;
+          case "handoff": showHandoff(); break;
+          case "view-key":
+            game.phase = "clue"; privacyLocked = false; saveGame(); closeModal();
+            window.scrollTo({ top: 0, behavior: "instant" });
+            if (window.matchMedia("(min-width: 851px)").matches) document.getElementById("clue-input")?.focus({ preventScroll: true });
+            break;
+          case "begin-guess":
+            game.phase = "guess"; saveGame(); closeModal();
+            window.scrollTo({ top: 0, behavior: "instant" });
+            break;
+          case "scroll-to-clue":
+            elements.briefing.scrollIntoView({ block: "start", behavior: "smooth" });
+            document.getElementById("clue-input")?.focus({ preventScroll: true });
+            break;
+          case "end-turn":
+            Codenames.endTurn(game); privacyLocked = true; clueDraft = { word: "", count: 2 };
+            saveGame(); render(); showHandoff(); break;
+          case "result": showResult(); break;
+        }
+      });
+      document.addEventListener("submit", event => { if (event.target.id === "clue-form") submitClue(event); });
+      document.addEventListener("input", event => {
+        if (event.target.id === "clue-input") clueDraft.word = event.target.value;
+        if (event.target.id === "custom-words") customWordsDraft = event.target.value;
+      });
+      document.addEventListener("change", event => {
+        if (event.target.id === "clue-count") clueDraft.count = event.target.value === "unlimited" ? "unlimited" : Number(event.target.value);
+      });
+      document.getElementById("new-game-button").addEventListener("click", showSetup);
+      document.getElementById("rules-button").addEventListener("click", showRules);
+      document.getElementById("fullscreen-button").addEventListener("click", async () => {
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else await document.documentElement.requestFullscreen();
+        } catch (error) { showToast("这个浏览器暂不支持全屏，可以用浏览器菜单放大窗口。"); }
+      });
+      document.addEventListener("fullscreenchange", () => {
+        document.getElementById("fullscreen-button").textContent = document.fullscreenElement ? "退出全屏" : "全屏";
+      });
+      document.addEventListener("visibilitychange", () => { if (document.hidden) lockKey(); });
+      window.addEventListener("blur", () => lockKey());
+      document.addEventListener("keydown", event => {
+        if (!modalKind) return;
+        if (event.key === "Escape" && ["setup", "rules", "selection", "result"].includes(modalKind)) {
+          event.preventDefault(); closeModal();
+          if (game?.phase === "clue" && privacyLocked) showHandoff();
+        }
+        if (event.key === "Tab") {
+          const focusable = [...elements.modal.querySelectorAll('button:not(:disabled), input, select, textarea, summary')].filter(node => node.getClientRects().length);
+          const first = focusable[0], last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        }
+      });
+      render();
+      if (game) {
+        saveGame();
+        if (["handoff", "clue", "guess_handoff"].includes(game.phase)) showHandoff();
+        else if (game.phase === "finished") showResult();
+        else showToast("已恢复这台设备上的对局，继续行动吧。");
+      }
+    })();
+  </script>
+</body>
+</html>
