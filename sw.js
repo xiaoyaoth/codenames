@@ -1,7 +1,7 @@
 "use strict";
 
 const CACHE_PREFIX = `codenames:${self.registration.scope}:`;
-const CACHE_NAME = `${CACHE_PREFIX}2026-11-07-v3`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-11-07-v4`;
 const APP_URL = new URL("./index.html", self.registration.scope).href;
 const ASSETS = [
   "./",

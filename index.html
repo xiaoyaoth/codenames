@@ -459,7 +459,7 @@
       let modalReturnFocus = null;
       let setupFirstTeam = "random";
       let wordBanks = loadWordBanks();
-      let selectedWordBankName = "";
+      const selectedWordBankNames = new Set();
       let wordBankReturnToSetup = false;
       let wordBankDraft = { name: "", words: "" };
       let toastTimer;
@@ -488,10 +488,28 @@
         return [];
       }
       function parseWordBankWords(text) {
-        return [...new Set(text.split(/[\s,，;；、]+/u).filter(Boolean))];
+        return [...new Set(text.split(/[\s\p{P}\p{S}\p{Cf}\uFE0E\uFE0F]+/u).filter(Boolean))];
       }
-      function selectedWordBank() {
-        return wordBanks.find(bank => bank.name === selectedWordBankName);
+      function selectedWordBanks() {
+        return [{ name: "", words: Codenames.WORDS }, ...wordBanks].filter(bank => selectedWordBankNames.has(bank.name));
+      }
+      function selectedWordBankWords() {
+        const banks = selectedWordBanks();
+        return banks.length ? [...new Set(banks.flatMap(bank => bank.words))] : Codenames.WORDS;
+      }
+      function wordBankSelectionSummary() {
+        const count = selectedWordBanks().length;
+        return count ? `已选 ${count} 个词库 · 合并去重后 ${selectedWordBankWords().length} 个词`
+          : `未选择词库，将使用默认词库的 ${Codenames.WORDS.length} 个词`;
+      }
+      function updateWordBankSelection() {
+        elements.modal.querySelectorAll("[data-word-bank]").forEach(button => {
+          const selected = selectedWordBankNames.has(button.dataset.wordBank);
+          button.classList.toggle("selected", selected);
+          button.setAttribute("aria-pressed", String(selected));
+          button.querySelector(".word-bank-choice").textContent = selected ? "☑ 已选择" : "☐ 未选择";
+        });
+        document.getElementById("word-bank-selection-summary").textContent = wordBankSelectionSummary();
       }
       function showToast(message) {
         clearTimeout(toastTimer);
@@ -596,7 +614,7 @@
       const closeButton = '<button class="modal-close" data-action="close" aria-label="关闭弹窗">×</button>';
       function showSetup() {
         lockKey(false);
-        const bank = selectedWordBank();
+        const banks = selectedWordBanks();
         showModal("setup", `${closeButton}<div class="modal-icon">${ICONS.cards}</div><div class="eyebrow">今晚的家庭任务</div><h2 id="modal-title">把默契，摆上桌。</h2>
           <p class="modal-copy">红蓝两队，各选一位队长。其余人猜词。<br>一台设备轮流传递，所有人一起参与。</p>
           <div class="setup-section"><label class="field-label">谁先行动？</label><div class="segmented">
@@ -605,15 +623,15 @@
           <div class="setup-info"><strong>5 × 5</strong><span>先手 9 名 · 后手 8 名<br>7 名路人 · 1 名刺客</span></div>
           <div class="setup-section"><span class="field-label">本局词库</span>
             <button class="button word-bank-option" data-action="select-word-bank">
-              <span><span class="word-bank-name">${escapeHtml(bank?.name || "默认词库")}</span><span class="word-bank-count">${bank?.words.length || Codenames.WORDS.length} 个词</span></span>
+              <span><span class="word-bank-name">${banks.length ? banks.map(bank => escapeHtml(bank.name || "默认词库")).join(" ＋ ") : "默认词库"}</span><span class="word-bank-count">${selectedWordBankWords().length} 个词${banks.length > 1 ? " · 已合并去重" : ""}</span></span>
               <span class="word-bank-choice">选择词库 ›</span>
-            </button><p class="hint">不指定时使用默认词库，也可以新建自己的词库。</p>
+            </button><p class="hint">词库可多选，选中的词会合并去重；不指定时使用默认词库。</p>
           </div>
           <button class="button primary full" data-action="start-game" data-autofocus>开始行动 →</button>
           <p class="modal-footnote">${game ? "开始后将替换当前对局。" : "推荐 4 人以上；3 人可共用一位猜词者。"}<br>提示词和数量口述，红蓝轮次由队员切换。</p>`);
       }
       function startGame() {
-        game = Codenames.createGame(selectedWordBank()?.words || Codenames.WORDS, setupFirstTeam);
+        game = Codenames.createGame(selectedWordBankWords(), setupFirstTeam);
         privacyLocked = true;
         saveGame();
         closeModal();
@@ -625,15 +643,16 @@
         const options = [{ name: "", words: Codenames.WORDS }, ...wordBanks];
         showModal("word-banks", `<button class="modal-close" data-action="return-from-word-banks" aria-label="${returnToSetup ? "返回新对局" : "关闭词库"}">×</button>
           <div class="eyebrow">为下一局，挑一份词</div><h2 id="modal-title">选择词库。</h2>
-          <p class="modal-copy">不指定时使用默认词库。新建的词库会保存在这台设备，之后可以反复使用。</p>
+          <p class="modal-copy">词库可以多选，所有选中的词会混在一起并去重。默认词库也可一起选；不选任何词库时，仍使用默认词库。</p>
           <div class="word-bank-list" role="group" aria-label="可选词库">
-            ${options.map(bank => `<button class="button word-bank-option ${bank.name === selectedWordBankName ? "selected" : ""}" data-word-bank="${escapeHtml(bank.name)}" aria-pressed="${bank.name === selectedWordBankName}">
+            ${options.map(bank => `<button class="button word-bank-option ${selectedWordBankNames.has(bank.name) ? "selected" : ""}" data-word-bank="${escapeHtml(bank.name)}" aria-pressed="${selectedWordBankNames.has(bank.name)}">
               <span><span class="word-bank-name">${escapeHtml(bank.name || "默认词库")}</span><span class="word-bank-count">${bank.words.length} 个词</span></span>
-              <span class="word-bank-choice">${bank.name === selectedWordBankName ? "已选择 ✓" : "选择 ›"}</span>
+              <span class="word-bank-choice">${selectedWordBankNames.has(bank.name) ? "☑ 已选择" : "☐ 未选择"}</span>
             </button>`).join("")}
           </div>
-          <button class="button primary full" data-action="new-word-bank">＋ 新建词库</button>
-          <button class="button quiet full" data-action="return-from-word-banks" style="margin-top:8px">${returnToSetup ? "返回新对局" : "继续游戏"}</button>
+          <p class="hint" id="word-bank-selection-summary" role="status" aria-live="polite" style="margin-bottom:18px">${wordBankSelectionSummary()}</p>
+          <button class="button primary full" data-action="return-from-word-banks">确认选择 →</button>
+          <button class="button quiet full" data-action="new-word-bank" style="margin-top:8px">＋ 新建词库</button>
           <p class="modal-footnote">选择词库仅影响新对局，当前棋盘会保留。</p>`);
       }
       function returnFromWordBanks() {
@@ -651,7 +670,7 @@
           </div>
           <div class="word-bank-field"><label class="field-label" for="word-bank-words">粘贴词语</label>
             <textarea class="input" id="word-bank-words" placeholder="苹果，香蕉, 橘子&#10;葡萄 西瓜 草莓">${escapeHtml(wordBankDraft.words)}</textarea>
-            <p class="hint">支持中文逗号、英文逗号、空格、换行、Tab，也支持顿号和分号；可以混用。重复词会自动去除，每个词最多 8 个字。</p>
+            <p class="hint">空格、换行、Tab，以及中英文逗号、分号、竖线、顿号、斜杠、冒号等标点和符号都能分隔，可以混用。重复词会自动去除，每个词最多 8 个字。</p>
             <p class="hint" id="word-bank-word-count" role="status" aria-live="polite">已识别 ${parseWordBankWords(wordBankDraft.words).length} 个不同的词 · 至少需要 25 个</p>
           </div>
           <p class="error" id="word-bank-error" role="alert" hidden></p>
@@ -681,10 +700,10 @@
           return;
         }
         wordBanks = updatedBanks;
-        selectedWordBankName = name;
+        selectedWordBankNames.add(name);
         wordBankDraft = { name: "", words: "" };
         returnFromWordBanks();
-        showToast(`已保存并选择“${name}”，新对局会使用这个词库。`);
+        showToast(`已保存并选中“${name}”，会与其他选中的词库合并。`);
       }
       function showKeyConfirmation() {
         const name = TEAM_NAMES[game.currentTeam];
@@ -759,8 +778,10 @@
           return;
         }
         if (button.hasAttribute("data-word-bank")) {
-          selectedWordBankName = button.dataset.wordBank;
-          returnFromWordBanks();
+          const name = button.dataset.wordBank;
+          if (selectedWordBankNames.has(name)) selectedWordBankNames.delete(name);
+          else selectedWordBankNames.add(name);
+          updateWordBankSelection();
           return;
         }
         switch (button.dataset.action) {
